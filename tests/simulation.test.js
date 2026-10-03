@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Match, PITCH } from '../src/game/simulation.js';
+import { Match, PITCH, TEAM_SIZE } from '../src/game/simulation.js';
 import { stateLength } from '../src/game/quantum.js';
 
 function advance(match, seconds, inputs = []) {
@@ -10,6 +10,7 @@ function advance(match, seconds, inputs = []) {
 
 function isolatedMatch(state = { x: 0, y: 0, z: 1 }) {
   const match = new Match({ random: () => 0.99 });
+  match.locks.forEach(lock => { lock.basis = 'Z'; lock.sign = 1; lock.target = null; lock.progress = 0; });
   match.phase = 'play';
   match.players.forEach((player, i) => {
     player.x = 1100 + (i % 4) * 70;
@@ -20,7 +21,7 @@ function isolatedMatch(state = { x: 0, y: 0, z: 1 }) {
   carrier.x = 500; carrier.y = 400; carrier.fx = 1; carrier.fy = 0;
   match.ball.x = 529; match.ball.y = 400; match.ball.state = { ...state };
   match.ball.owner = 4;
-  match.controlled = [4, 6];
+  match.controlled = [4, TEAM_SIZE + 1];
   match.drainEvents();
   return match;
 }
@@ -52,14 +53,14 @@ test('a completed teammate pass applies one gate and a return pass applies the r
   match.update(1 / 120, [{ pass: true }, {}]);
   advance(match, 0.5);
   assert.equal(match.ball.owner, returnTarget.id);
-  assert.deepEqual(match.gatesHistory, ['H', 'T']);
-  assert.ok(Math.abs(match.ball.state.x - Math.SQRT1_2) < 1e-9);
-  assert.ok(Math.abs(match.ball.state.y - Math.SQRT1_2) < 1e-9);
+  assert.deepEqual(match.gatesHistory, ['H', 'S']);
+  assert.ok(Math.abs(match.ball.state.x) < 1e-9);
+  assert.ok(Math.abs(match.ball.state.y - 1) < 1e-9);
 });
 
 test('pressure loses strength, and a subsequent gate reception cannot restore it', () => {
   const match = isolatedMatch({ x: 0.6, y: 0.8, z: 0 });
-  const defender = match.player(6);
+  const defender = match.player(TEAM_SIZE + 1);
   defender.x = 590; defender.y = 400;
   advance(match, 0.35);
   const weakened = stateLength(match.ball.state);
@@ -88,7 +89,7 @@ test('a back-pass to the keeper resets even a maximally mixed ball', () => {
 
 test('a defender intercepts before the receiver and wipes the original phase', () => {
   const match = isolatedMatch({ x: 0.6, y: 0.8, z: 0 });
-  const defender = match.player(6);
+  const defender = match.player(TEAM_SIZE + 1);
   defender.x = 650; defender.y = 400;
   const receiver = match.player(2);
   receiver.x = 900; receiver.y = 400;
@@ -102,7 +103,7 @@ test('a defender intercepts before the receiver and wipes the original phase', (
 
 test('a pressured back-pass leaves from the correct foot and escapes a front marker', () => {
   const match = isolatedMatch();
-  const defender = match.player(6);
+  const defender = match.player(TEAM_SIZE + 1);
   defender.x = 550; defender.y = 400;
   const receiver = match.player(2);
   receiver.x = 270; receiver.y = 400;
@@ -163,17 +164,19 @@ test('a physically successful shot gets a half-second Born measurement, then a c
   advance(match, 2.5);
   assert.equal(match.phase, 'kickoff');
   assert.equal(match.ball.lastTeam, 1);
-  assert.equal(match.ball.owner, 9);
+  assert.equal(match.ball.owner, TEAM_SIZE + 4);
   assert.deepEqual(match.ball.state, { x: 0, y: 0, z: 1 });
 });
 
-test('a perfectly opposite shot fails measurement and possession resets with the defender keeper', () => {
+test('a perfectly opposite shot fails measurement and rebounds in the measured negative state', () => {
   const match = clearGoalAttempt({ x: 0, y: 0, z: -1 }, () => 0.5);
-  advance(match, 0.95);
+  for (let i = 0; i < 120 && !match.drainEvents().some(event => event.type === 'rebound'); i++) match.update(1 / 120);
   assert.deepEqual(match.score, [0, 0]);
   assert.equal(match.stats[0].failedMeasurements, 1);
-  assert.equal(match.ball.owner, match.keeper(1).id);
-  assert.deepEqual(match.ball.state, { x: 0, y: 0, z: 1 });
+  assert.equal(match.ball.mode, 'loose');
+  assert.equal(match.ball.owner, null);
+  assert.deepEqual(match.ball.state, { x: 0, y: 0, z: -1 });
+  assert.ok(match.ball.vx < 0);
 });
 
 test('a shot already in flight at the whistle finishes measurement before halftime', () => {

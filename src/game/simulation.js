@@ -1,7 +1,9 @@
 import { applyGate, depolarize, freshState, lockAxis, measureZ, probability, stateLength } from './quantum.js';
+import { conditionalGate, createJoint, internalState, measurePath, recombine, relativePathPhase } from './interference.js';
 
 export const PITCH = Object.freeze({ left: 100, right: 1500, top: 100, bottom: 960, cx: 800, cy: 530, goalHalf: 110, boxDepth: 230, boxHalf: 230 });
 export const TEAM_COLORS = [0x36e1db, 0xff8b59];
+export const TEAM_SIZE = 6;
 export const PLAYER_RADIUS = 22;
 const BALL_RADIUS = 9;
 const RUN_SPEED = 242;
@@ -9,7 +11,7 @@ const SPRINT_SPEED = 326;
 const PRESSURE_RADIUS = 138;
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-const blankInput = () => ({ x: 0, y: 0, pass: false, shoot: false, shootReleased: false, switch: false, reading: false, sprint: false });
+const blankInput = () => ({ x: 0, y: 0, pass: false, split: false, shoot: false, shootReleased: false, switch: false, reading: false, sprint: false });
 const blankStats = () => ({ shots: 0, goals: 0, possession: 0, alignmentTotal: 0, failedMeasurements: 0, stateLost: 0, saves: 0, passes: 0 });
 
 function normalized(x, y) {
@@ -30,6 +32,15 @@ function segmentContact(ax, ay, bx, by, px, py, radius) {
   if (discriminant < 0) return null;
   const t = (-b - Math.sqrt(discriminant)) / (2 * a);
   return t >= 0 && t <= 1 ? t : null;
+}
+
+export function splitLanePosition(split, path, progress) {
+  const t = clamp(progress, 0, 1), inverse = 1 - t;
+  const start = split.start, control = split.lanes[path].control, end = split.merge;
+  return {
+    x: inverse * inverse * start.x + 2 * inverse * t * control.x + t * t * end.x,
+    y: inverse * inverse * start.y + 2 * inverse * t * control.y + t * t * end.y,
+  };
 }
 
 /** A renderer-independent, deterministic-with-rng football match. dt is in seconds. */
@@ -54,8 +65,9 @@ export class Match {
     this.gatesHistory = [];
     this.measurement = null;
     this.pressure = 0;
-    this.controlled = [4, 9];
-    this.locks = [0, 1].map(() => ({ basis: 'Z', target: null, progress: 0, frozen: false }));
+    this.splitCooldown = [0, 0];
+    this.controlled = [4, TEAM_SIZE + 4];
+    this.locks = [0, 1].map(() => ({ basis: 'Z', sign: 1, target: null, progress: 0, frozen: false }));
     this._manualUntil = [0, 0];
     this._pressUntil = [0, 0];
     this._aiTimer = [0.75, 0.75];
@@ -64,15 +76,16 @@ export class Match {
     this._endPending = false;
     this._kickoffTeam = 0;
     this.players = [];
-    const roster = [ ['GK', 'RESET'], ['DEF', 'X'], ['MID', 'H'], ['MID', 'Z'], ['FWD', 'T'] ];
+    const roster = [ ['GK', 'RESET'], ['DEF', 'X'], ['MID', 'H'], ['MID', 'Z'], ['FWD', 'S'], ['FWD', 'S†'] ];
     for (let team = 0; team < 2; team++) {
       roster.forEach(([role, gate], index) => this.players.push({
-        id: team * 5 + index, team, role, gate, slot: index,
+        id: team * TEAM_SIZE + index, team, role, gate, slot: index,
         x: PITCH.cx, y: PITCH.cy, vx: 0, vy: 0, fx: team ? -1 : 1, fy: 0,
         charge: 0, dive: 0, cooldown: 0,
       }));
     }
     this.ball = { x: PITCH.cx, y: PITCH.cy, vx: 0, vy: 0, owner: 4, state: freshState(), mode: 'held', lastTeam: 0, target: null, sender: null, height: 0, age: 0 };
+    this._rerollTargets();
     this._setupKickoff(0);
     return this;
   }
@@ -82,14 +95,33 @@ export class Match {
   attackDirection(team) { return (team === 0 ? 1 : -1) * (this.half === 1 ? 1 : -1); }
   ownGoalX(team) { return this.attackDirection(team) > 0 ? PITCH.left : PITCH.right; }
   opposingGoalX(team) { return this.ownGoalX(1 - team); }
-  keeper(team) { return this.players[team * 5]; }
+  keeper(team) { return this.players[team * TEAM_SIZE]; }
   shotChance(team) { return probability(this.ball.state, this.lockVector(1 - team)); }
 
   lockVector(team) {
     const lock = this.locks[team];
-    if (!lock.target) return lockAxis(lock.basis);
+    const sign = lock.sign ?? 1;
+    if (!lock.target) {
+      const axis = lockAxis(lock.basis);
+      return { x: sign * axis.x, y: sign * axis.y, z: sign * axis.z };
+    }
     const angle = (lock.basis === 'Z' ? lock.progress : 1 - lock.progress) * Math.PI / 2;
-    return { x: Math.sin(angle), y: 0, z: Math.cos(angle) };
+    return { x: sign * Math.sin(angle), y: 0, z: sign * Math.cos(angle) };
+  }
+
+  _rerollTargets() {
+    const choices = [ { basis: 'Z', sign: 1 }, { basis: 'Z', sign: -1 }, { basis: 'X', sign: 1 }, { basis: 'X', sign: -1 } ];
+    const labels = { 'Z1': '|0〉', 'Z-1': '|1〉', 'X1': '|+〉', 'X-1': '|−〉' };
+    const targets = this.locks.map((lock, team) => {
+      const previous = lock._previousTarget ? { basis: lock.target || lock.basis, sign: lock.sign } : null;
+      const available = choices.filter(choice => !previous || choice.basis !== previous.basis || choice.sign !== previous.sign);
+      const choice = this.options.drill ? { basis: 'Z', sign: -1 } : available[Math.min(available.length - 1, Math.floor(this.random() * available.length))];
+      lock.basis = choice.basis; lock.sign = choice.sign;
+      lock.target = null; lock.progress = 0; lock.frozen = false;
+      lock._previousTarget = { ...choice };
+      return { team, basis: choice.basis, sign: choice.sign, label: labels[choice.basis + choice.sign] };
+    });
+    this._emit('targets', { targets, labels: targets.map(target => target.label) });
   }
 
   inPenaltyBox(team, point = this.ball) {
@@ -107,8 +139,8 @@ export class Match {
 
   _home(player) {
     const direction = this.attackDirection(player.team);
-    const relativeX = [ -645, -395, -125, -45, 270 ][player.slot];
-    const relativeY = [ 0, 0, -185, 185, 0 ][player.slot];
+    const relativeX = [ -645, -395, -125, -45, 270, 270 ][player.slot];
+    const relativeY = [ 0, 0, -185, 185, -150, 150 ][player.slot];
     return { x: PITCH.cx + direction * relativeX, y: PITCH.cy + relativeY };
   }
 
@@ -131,10 +163,10 @@ export class Match {
       player.vx = 0; player.vy = 0; player.fx = direction; player.fy = 0;
       player.charge = 0; player.dive = 0; player.cooldown = 0;
     }
-    const starter = this.players[team * 5 + 4];
+    const starter = this.players[team * TEAM_SIZE + 4];
     starter.x = PITCH.cx - this.attackDirection(team) * 29;
     starter.y = PITCH.cy;
-    const teammate = this.players[team * 5 + 2];
+    const teammate = this.players[team * TEAM_SIZE + 2];
     teammate.x = PITCH.cx - this.attackDirection(team) * 120;
     teammate.y = PITCH.cy - 150;
     this.ball = { x: PITCH.cx, y: PITCH.cy, vx: 0, vy: 0, owner: starter.id, state: freshState(), mode: 'held', lastTeam: team, target: null, sender: null, height: 0, age: 0 };
@@ -205,6 +237,175 @@ export class Match {
     return best;
   }
 
+  _splitTargets(player) {
+    const candidates = this.players.filter(p => p.team === player.team && p.id !== player.id && p.role !== 'GK' && distance(p, player) > 70);
+    if (candidates.length < 2) return null;
+    let target = this.bestPass(player);
+    if (!target || target.role === 'GK') {
+      target = candidates.sort((a, b) => {
+        const score = p => ((p.x - player.x) * player.fx + (p.y - player.y) * player.fy) / distance(p, player) - distance(p, player) / 1400;
+        return score(b) - score(a);
+      })[0];
+    }
+    const outlet = candidates.filter(p => p.id !== target.id).sort((a, b) => distance(a, target) - distance(b, target))[0];
+    return outlet ? { target, outlet } : null;
+  }
+
+  _makeSplit(player, targets) {
+    const aim = normalized(targets.target.x - player.x, targets.target.y - player.y);
+    const start = { x: player.x + aim.x * 30, y: player.y + aim.y * 30 };
+    const merge = {
+      x: clamp(targets.target.x - aim.x * 50, PITCH.left + 45, PITCH.right - 45),
+      y: clamp(targets.target.y - aim.y * 50, PITCH.top + 45, PITCH.bottom - 45),
+    };
+    const midpoint = { x: (start.x + merge.x) / 2, y: (start.y + merge.y) / 2 };
+    const bend = clamp(distance(start, merge) * 0.65, 170, 310);
+    const split = {
+      team: player.team, sender: player.id, target: targets.target.id, outlet: targets.outlet.id,
+      start, merge, ends: [merge, merge], duration: clamp(distance(start, merge) / 510, 0.62, 1.65),
+      elapsed: 0, progress: 0, joint: createJoint(this.ball.state), touched: [new Set(), new Set()], controlledGate: null,
+      lanes: [-1, 1].map(sign => ({
+        x: start.x, y: start.y, phase: 0,
+        control: {
+          x: clamp(midpoint.x - aim.y * bend * sign, PITCH.left + 32, PITCH.right - 32),
+          y: clamp(midpoint.y + aim.x * bend * sign, PITCH.top + 32, PITCH.bottom - 32),
+        },
+      })),
+    };
+    this._refreshSplit(split);
+    return split;
+  }
+
+  _refreshSplit(split) {
+    split.forecast = recombine(split.joint);
+    split.probabilities = split.forecast.probabilities;
+    split.states = split.forecast.states;
+    split.lanes[0].phase = 0;
+    split.lanes[1].phase = relativePathPhase(split.joint);
+  }
+
+  splitForecast() {
+    return this.ball.split?.forecast || null;
+  }
+
+  passPreview(player = this.player(this.ball.owner)) {
+    if (!player) return null;
+    const target = this.bestPass(player);
+    if (!target) return null;
+    const state = applyGate(this.ball.state, target.gate);
+    const targets = this._splitTargets(player);
+    let split = null;
+    if (targets) {
+      const route = this._makeSplit(player, targets);
+      // Forecast gate contacts on the present formation; players may move later.
+      for (let path = 0; path < 2; path++) {
+        const excluded = [route.sender, route.target, route.outlet];
+        let previous = route.start;
+        for (let sample = 1; sample <= 24; sample++) {
+          const point = splitLanePosition(route, path, sample / 24);
+          for (const teammate of this.players) {
+            if (teammate.team !== player.team || teammate.role === 'GK' || excluded.includes(teammate.id) || route.touched[path].has(teammate.id)) continue;
+            if (segmentContact(previous.x, previous.y, point.x, point.y, teammate.x, teammate.y, PLAYER_RADIUS + BALL_RADIUS) !== null) {
+              route.touched[path].add(teammate.id);
+              route.joint = conditionalGate(route.joint, teammate.gate, path);
+            }
+          }
+          previous = point;
+        }
+      }
+      this._refreshSplit(route);
+      const forecast = route.forecast;
+      split = { probabilities: forecast.probabilities, states: forecast.states, target: targets.target, outlet: targets.outlet, route };
+    }
+    return { target, before: this.shotChance(player.team), after: probability(state, this.lockVector(1 - player.team)), gate: target.gate, state, split };
+  }
+
+  _startSplit(player) {
+    if (this.options.drill || this.ball.owner !== player.id || this.splitCooldown[player.team] > 0) return false;
+    const targets = this._splitTargets(player);
+    if (!targets) return false;
+    const split = this._makeSplit(player, targets);
+    this.ball.owner = null; this.ball.mode = 'split'; this.ball.split = split;
+    this.ball.target = split.target; this.ball.sender = player.id; this.ball.lastTeam = player.team;
+    this.ball.x = split.start.x; this.ball.y = split.start.y;
+    this.ball.vx = 0; this.ball.vy = 0; this.ball.height = 0; this.ball.age = 0;
+    this.splitCooldown[player.team] = 6;
+    this.controlled[player.team] = split.target;
+    player.charge = 0;
+    this.stats[player.team].passes++;
+    this._emit('kick', { team: player.team, pass: true, split: true });
+    this._emit('split', { team: player.team, from: player.id, to: split.target, outlet: split.outlet, probabilities: split.forecast.probabilities });
+    return true;
+  }
+
+  _resolveSplitPass(state, targetId, point, sender) {
+    const ball = this.ball;
+    const target = this.player(targetId);
+    const aim = normalized(target.x - point.x, target.y - point.y);
+    ball.split = null; ball.state = state; ball.mode = 'pass'; ball.owner = null;
+    ball.target = targetId; ball.sender = sender; ball.age = 0; ball.height = 0;
+    ball.x = point.x; ball.y = point.y; ball.vx = aim.x * 730; ball.vy = aim.y * 730;
+    this.controlled[target.team] = targetId;
+  }
+
+  _updateSplit(dt) {
+    const split = this.ball.split;
+    if (!split) { this.ball.mode = 'loose'; return; }
+    split.elapsed = Math.min(split.duration, split.elapsed + dt);
+    split.progress = split.elapsed / split.duration;
+    this.ball.age += dt;
+    this.pressure = 0;
+    const excluded = [split.sender, split.target, split.outlet];
+    const contacts = [];
+    for (let path = 0; path < 2; path++) {
+      const lane = split.lanes[path], previous = { x: lane.x, y: lane.y };
+      const point = splitLanePosition(split, path, split.progress);
+      lane.x = point.x; lane.y = point.y;
+      for (const player of this.players) {
+        if (excluded.includes(player.id) || split.touched[path].has(player.id)) continue;
+        if (this.options.drill && player.team !== split.team) continue;
+        if (player.team === split.team && player.role === 'GK') continue;
+        if (player.team !== split.team && split.elapsed < 0.1) continue;
+        const contact = segmentContact(previous.x, previous.y, point.x, point.y, player.x, player.y, PLAYER_RADIUS + BALL_RADIUS - 2);
+        if (contact !== null) contacts.push({ path, player, contact, x: previous.x + (point.x - previous.x) * contact, y: previous.y + (point.y - previous.y) * contact });
+      }
+    }
+    contacts.sort((a, b) => a.contact - b.contact);
+    for (const contact of contacts) {
+      const { path, player } = contact;
+      split.touched[path].add(player.id);
+      if (player.team === split.team) {
+        const stateBefore = internalState(split.joint);
+        split.joint = conditionalGate(split.joint, player.gate, path);
+        this._refreshSplit(split);
+        this.ball.state = internalState(split.joint);
+        this._emit('laneGate', { team: split.team, player: player.id, gate: player.gate, path, x: contact.x, y: contact.y, stateBefore, stateAfter: { ...this.ball.state }, probabilities: split.forecast.probabilities });
+      } else {
+        const outcome = measurePath(split.joint, path, this.random);
+        this._emit('pathCollapse', { team: split.team, defenderTeam: player.team, player: player.id, path: outcome.path, touchedPath: path, caught: outcome.caught, probability: outcome.probability, x: contact.x, y: contact.y });
+        if (outcome.caught) {
+          this.ball.state = outcome.state; this.ball.split = null; this.ball.mode = 'pass';
+          this.ball.x = contact.x; this.ball.y = contact.y;
+          this._takePossession(player, 'interception');
+        } else {
+          const surviving = split.lanes[outcome.path];
+          this._resolveSplitPass(outcome.state, split.target, surviving, split.sender);
+        }
+        return;
+      }
+    }
+    this.ball.x = (split.lanes[0].x + split.lanes[1].x) / 2;
+    this.ball.y = (split.lanes[0].y + split.lanes[1].y) / 2;
+    this.ball.state = internalState(split.joint);
+    if (split.progress >= 1) {
+      const forecast = split.forecast;
+      const port = this.random() < forecast.probabilities[0] ? 0 : 1;
+      const target = port === 0 ? split.target : split.outlet;
+      this._emit('recombine', { team: split.team, port, probability: forecast.probabilities[port], probabilities: [...forecast.probabilities], target, x: split.merge.x, y: split.merge.y });
+      this._resolveSplitPass(forecast.states[port], target, split.merge, split.sender);
+    }
+  }
+
   _pass(player, target = this.bestPass(player)) {
     if (this.ball.owner !== player.id || !target) return false;
     const speed = 730;
@@ -269,12 +470,14 @@ export class Match {
       this.gatesHistory = [];
       this._emit('tackle', { team: player.team, player: player.id, interception: cause === 'interception', outcome: ball.state.z });
     } else if (isPass) {
+      const stateBefore = { ...ball.state };
       ball.state = applyGate(ball.state, player.gate);
       this.gatesHistory.push(player.gate);
       this.gatesHistory = this.gatesHistory.slice(-7);
-      this._emit('gate', { team: player.team, player: player.id, gate: player.gate, probability: probability(ball.state, this.lockVector(1 - player.team)) });
+      this._emit('gate', { team: player.team, player: player.id, gate: player.gate, probability: probability(ball.state, this.lockVector(1 - player.team)), stateBefore, stateAfter: { ...ball.state } });
     }
     ball.owner = player.id; ball.mode = 'held'; ball.target = null; ball.sender = null;
+    ball.split = null;
     ball.lastTeam = player.team; ball.vx = 0; ball.vy = 0; ball.age = 0; ball.height = 0;
     this.controlled[player.team] = player.id;
     this._manualUntil[player.team] = 0;
@@ -285,10 +488,11 @@ export class Match {
 
   _reading(team) {
     const lock = this.locks[team];
+    if (this.options.drill) return false;
     if (lock.frozen || lock.target) return false;
     lock.target = lock.basis === 'Z' ? 'X' : 'Z';
     lock.progress = 0;
-    this._emit('reading', { team, basis: lock.target, x: this.ownGoalX(team), y: PITCH.cy });
+    this._emit('reading', { team, basis: lock.target, sign: lock.sign, x: this.ownGoalX(team), y: PITCH.cy });
     return true;
   }
 
@@ -307,12 +511,25 @@ export class Match {
 
   _updateControl(team, input) {
     const owner = this.player(this.ball.owner);
+    if (this.ball.mode === 'split' && this.ball.lastTeam === team && this.ball.split) {
+      const split = this.ball.split;
+      if (input.switch) {
+        const eligible = this.players.filter(player => player.team === team && player.role !== 'GK'
+          && ![split.sender, split.target, split.outlet].includes(player.id));
+        if (eligible.length) {
+          const index = eligible.findIndex(player => player.id === split.controlledGate);
+          split.controlledGate = eligible[(index + 1) % eligible.length].id;
+        }
+      }
+      this.controlled[team] = split.controlledGate ?? split.target;
+      return;
+    }
     if (owner?.team === team) {
       this.controlled[team] = owner.id;
       if (input.switch) this._pressUntil[team] = this.elapsed + 2;
       return;
     }
-    if (this.ball.mode === 'pass' && this.ball.lastTeam === team && this.ball.target !== null) {
+    if ((this.ball.mode === 'pass' || this.ball.mode === 'split') && this.ball.lastTeam === team && this.ball.target !== null) {
       this.controlled[team] = this.ball.target;
       return;
     }
@@ -336,6 +553,7 @@ export class Match {
     if (!controlled) return input;
     const owner = this.player(this.ball.owner);
     this._aiTimer[team] -= dt;
+    if (this.options.drill) return input;
     if (owner?.team === team) {
       const goal = { x: this.opposingGoalX(team), y: PITCH.cy };
       const goalDistance = distance(owner, goal);
@@ -379,7 +597,10 @@ export class Match {
       if (this._aiTimer[team] <= 0) {
         const lock = this.locks[team];
         const alternative = lock.basis === 'Z' ? 'X' : 'Z';
-        if (probability(this.ball.state, alternative) + 0.2 < probability(this.ball.state, lock.basis)) input.reading = true;
+        const sign = lock.sign ?? 1;
+        const currentAxis = lockAxis(lock.basis), nextAxis = lockAxis(alternative);
+        const signed = axis => ({ x: axis.x * sign, y: axis.y * sign, z: axis.z * sign });
+        if (probability(this.ball.state, signed(nextAxis)) + 0.2 < probability(this.ball.state, signed(currentAxis))) input.reading = true;
         this._aiTimer[team] = 1.1 + this.random();
       }
     }
@@ -447,6 +668,7 @@ export class Match {
           aim = normalized(this.ball.x - player.x, this.ball.y - player.y);
           speed = distance(player, this.ball) < 95 ? Math.min(190, distance(player, this.ball) * 2) : 0;
         }
+        if (this.options.drill) { aim = { x: 0, y: 0 }; speed = 0; }
       }
       const smoothing = 1 - Math.exp(-dt * 15);
       player.vx += (aim.x * speed - player.vx) * smoothing;
@@ -484,6 +706,7 @@ export class Match {
     let pressure = 0;
     let tackling = null;
     for (const opponent of this.players) {
+      if (this.options.drill) continue;
       if (opponent.team === owner.team) continue;
       const dist = distance(opponent, owner);
       if (dist < PRESSURE_RADIUS) pressure += (1 - dist / PRESSURE_RADIUS);
@@ -507,7 +730,8 @@ export class Match {
     }
     const input = inputs[owner.team];
     if (input.shoot) owner.charge = Math.min(1, owner.charge + dt / 0.85);
-    if (input.shootReleased) this._shoot(owner, Math.max(0.12, owner.charge));
+    if (input.split) this._startSplit(owner);
+    else if (input.shootReleased) this._shoot(owner, Math.max(0.12, owner.charge));
     else if (input.pass) this._pass(owner);
   }
 
@@ -528,7 +752,7 @@ export class Match {
     if (this.timer <= 0.25 && measure.success === null) {
       measure.success = this.random() < measure.probability;
       const sign = measure.success ? 1 : -1;
-      this.ball.state = { x: sign * measure.axis.x, y: sign * measure.axis.y, z: sign * measure.axis.z };
+      this.ball.state = { x: sign * measure.axis.x || 0, y: sign * measure.axis.y || 0, z: sign * measure.axis.z || 0 };
       this._emit('measure', { team: measure.team, probability: measure.probability, result: measure.success });
     }
     if (this.timer > 0) return;
@@ -538,12 +762,20 @@ export class Match {
       this.phase = 'goal'; this.timer = 2.4;
       this._kickoffTeam = 1 - measure.team;
       this._emit('goal', { team: measure.team, probability: measure.probability, score: [...this.score] });
+      this._rerollTargets();
     } else {
       this.stats[measure.team].failedMeasurements++;
       this._emit('miss', { team: measure.team, reason: 'measurement', probability: measure.probability });
-      const keeper = this.keeper(1 - measure.team);
-      this.ball.mode = 'loose';
-      this._takePossession(keeper, 'reset');
+      // The rejected projector produces -n. Keep that actual measured state on
+      // the pitch so a repeated reading cannot magically acquire new phase.
+      const direction = this.attackDirection(measure.team);
+      this.ball.mode = 'loose'; this.ball.owner = null; this.ball.target = null;
+      this.ball.x = this.opposingGoalX(measure.team) - direction * 24;
+      this.ball.vx = -direction * 420;
+      this.ball.vy = this.ball.y < PITCH.cy ? -110 : 110;
+      this.ball.sender = null;
+      this.ball.age = 0; this.ball.height = 0; this.ball.split = null;
+      this._emit('rebound', { team: measure.team, state: { ...this.ball.state } });
       this.phase = 'play';
       this.measurement = null;
       if (this._endPending) this._finishHalf();
@@ -566,6 +798,7 @@ export class Match {
     const bx = ax + ball.vx * dt, by = ay + ball.vy * dt;
     let contact = null, first = 2;
     for (const player of this.players) {
+      if (this.options.drill && (player.team !== ball.lastTeam || (player.role === 'GK' && (ball.mode === 'shot' || ball.target !== player.id)))) continue;
       if (player.id === ball.sender && ball.age < 0.22) continue;
       // A keeper has a visible dive reach, while outfielders meet the ball on foot.
       const isKeeperShot = player.role === 'GK' && ball.mode === 'shot' && player.team !== ball.lastTeam;
@@ -624,6 +857,7 @@ export class Match {
     this._immunity = Math.max(0, this._immunity - dt);
     this._pressureEventTimer = Math.max(0, this._pressureEventTimer - dt);
     if (this.phase === 'halftime' || this.phase === 'fulltime') return;
+    this.splitCooldown = this.splitCooldown.map(seconds => Math.max(0, seconds - dt));
     if (this.phase === 'kickoff') {
       this.timer -= dt;
       if (this.timer <= 0) { this.phase = 'play'; this.timer = 0; }
@@ -651,6 +885,7 @@ export class Match {
     }
     this._movePlayers(dt, inputs);
     if (this.ball.mode === 'held') this._heldBall(dt, inputs);
+    else if (this.ball.mode === 'split') this._updateSplit(dt);
     else this._movingBall(dt);
   }
 
@@ -664,7 +899,7 @@ export class Match {
     for (let i = 0; i < count; i++) {
       this._step(step, current);
       // Button edges are consumed once; movement and held charge persist.
-      if (i === 0) for (const input of current) { input.pass = false; input.shootReleased = false; input.switch = false; input.reading = false; }
+      if (i === 0) for (const input of current) { input.pass = false; input.split = false; input.shootReleased = false; input.switch = false; input.reading = false; }
     }
   }
 }

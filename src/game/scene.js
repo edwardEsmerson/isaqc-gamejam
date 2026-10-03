@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PITCH } from './simulation.js';
+import { PITCH, splitLanePosition } from './simulation.js';
 import { stateLength } from './quantum.js';
 
 const COLORS = [0x81e6ff, 0xff866d];
@@ -33,6 +33,17 @@ export class PitchScene extends Phaser.Scene {
     }
     this.dynamic = this.add.graphics().setDepth(4);
     this.trail = this.add.graphics().setDepth(3);
+    this.splitPaths = this.add.graphics().setDepth(11);
+    this.splitViews = [0, 1].map(path => this.add.container(0, 0, [
+      this.add.ellipse(2, 8, 25, 14, 0x031b1b, 0.25),
+      this.add.circle(0, 0, 11, path ? 0xc1baff : 0x81e6ff, 0.22).setStrokeStyle(2, path ? 0xc1baff : 0x81e6ff, 0.9),
+      this.add.circle(0, 0, 7, 0xf7fff6, 0.6),
+      this.add.text(0, -25, path ? 'B' : 'A', { fontFamily: FONT, fontSize: '17px', color: path ? '#c1baff' : '#81e6ff', fontStyle: 'bold', stroke: '#0b1c29', strokeThickness: 3 }).setOrigin(0.5),
+    ]).setDepth(14).setVisible(false));
+    this.portLabels = [0, 1].map(() => this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '19px', color: '#f4d38c', fontStyle: 'bold', stroke: '#0b1c29', strokeThickness: 4 }).setOrigin(0.5).setDepth(15).setVisible(false));
+    this.splitTrails = [[], []];
+    this.activeSplit = null;
+    this.passLabel = this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '18px', color: '#f4f6ef', fontStyle: 'bold', stroke: '#0b1c29', strokeThickness: 4 }).setOrigin(0.5).setDepth(15).setVisible(false);
     this.netGlow = this.add.graphics().setDepth(6);
     this.netPulse = [0, 0];
     this.ballShadow = this.add.ellipse(0, 0, 25, 14, 0x031b1b, 0.5).setDepth(10);
@@ -161,6 +172,7 @@ export class PitchScene extends Phaser.Scene {
 
   renderPlayers(match, time) {
     this.dynamic.clear();
+    this.passLabel.setVisible(false);
     for (const player of match.players) {
       const view = this.playerViews.get(player.id) || this.createPlayer(player);
       const selected = match.controlled[player.team] === player.id && this.controller.mode === 'match';
@@ -195,6 +207,19 @@ export class PitchScene extends Phaser.Scene {
         this.dynamic.lineStyle(1.5, COLORS[owner.team], 0.27);
         for (let d = 45; d < length - 35; d += 22) this.dynamic.lineBetween(owner.x + dx * d / length, owner.y + dy * d / length, owner.x + dx * (d + 8) / length, owner.y + dy * (d + 8) / length);
         this.dynamic.lineStyle(2, COLORS[owner.team], 0.55).strokeCircle(target.x, target.y, 32);
+        const preview = match.passPreview?.(owner);
+        if (preview) this.passLabel.setPosition(target.x, target.y + 49).setText(`${preview.gate === 'RESET' ? 'Reset' : preview.gate} · ${Math.round(preview.after * 100)}%`).setVisible(true);
+        const route = preview?.split?.route;
+        if (route && !match.options.drill && match.splitCooldown[owner.team] <= 0) {
+          for (let path = 0; path < 2; path++) {
+            this.dynamic.lineStyle(1.5, path ? 0xc1baff : 0x81e6ff, 0.24);
+            for (let sample = 1; sample < 32; sample += 2) {
+              const a = splitLanePosition(route, path, sample / 32), b = splitLanePosition(route, path, (sample + 1) / 32);
+              this.dynamic.lineBetween(a.x, a.y, b.x, b.y);
+            }
+          }
+          this.dynamic.lineStyle(1.5, 0xf4d38c, 0.5).strokeCircle(route.merge.x, route.merge.y, 9);
+        }
       }
       if (match.pressure > 0.1) {
         this.dynamic.lineStyle(2, 0xffaf92, 0.18 + match.pressure * 0.22).strokeCircle(owner.x, owner.y, 43 + Math.sin(time * 0.01) * 4);
@@ -204,6 +229,18 @@ export class PitchScene extends Phaser.Scene {
 
   renderBall(match, time) {
     const ball = match.ball;
+    const split = ball.mode === 'split' ? ball.split : null;
+    this.ballView.setVisible(!split);
+    this.ballShadow.setVisible(!split);
+    this.splitPaths.clear();
+    this.splitViews.forEach(view => view.setVisible(Boolean(split)));
+    this.portLabels.forEach(label => label.setVisible(false));
+    if (split) {
+      this.renderSplit(match, split, time);
+      this.ballRing.clear(); this.trail.clear(); this.trailPoints.length = 0;
+      return;
+    }
+    this.activeSplit = null;
     const length = stateLength(ball.state);
     const color = this.controller.options?.expert ? (ball.state.z > 0.2 ? 0x81e6ff : ball.state.z < -0.2 ? 0xff866d : 0xc1baff) : quantumColor(ball.state);
     const height = ball.height || (ball.mode === 'shot' ? Math.sin(Math.min(ball.age * 3, Math.PI)) * 7 : 0);
@@ -231,6 +268,34 @@ export class PitchScene extends Phaser.Scene {
     }
   }
 
+  renderSplit(match, split, time) {
+    if (this.activeSplit !== split) { this.splitTrails = [[], []]; this.activeSplit = split; }
+    const g = this.splitPaths;
+    for (let path = 0; path < 2; path++) {
+      const lane = split.lanes[path];
+      const color = path ? 0xc1baff : 0x81e6ff;
+      this.splitViews[path].setPosition(lane.x, lane.y - 6);
+      const points = this.splitTrails[path];
+      points.unshift({ x: lane.x, y: lane.y - 6 });
+      if (points.length > 22) points.pop();
+      for (let i = 1; i < points.length; i++) {
+        g.lineStyle(3, color, 0.45 * (1 - i / points.length));
+        g.lineBetween(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+      }
+      g.lineStyle(1, color, 0.35).strokeCircle(lane.x, lane.y - 6, 19 + (this.controller.reducedMotion ? 0 : Math.sin(time * 0.008) * 2));
+    }
+    // The two ghosts belong to one state; the connecting line makes that readable.
+    g.lineStyle(1, 0xd4d6ff, 0.16).lineBetween(split.lanes[0].x, split.lanes[0].y - 6, split.lanes[1].x, split.lanes[1].y - 6);
+    const forecast = split.forecast;
+    for (let port = 0; port < 2; port++) {
+      const receiver = match.player(port ? split.outlet : split.target);
+      if (!receiver) continue;
+      const chance = forecast?.probabilities?.[port];
+      g.lineStyle(2, port ? 0xc1baff : 0xf4d38c, 0.6).strokeCircle(receiver.x, receiver.y, 35);
+      this.portLabels[port].setPosition(receiver.x, receiver.y + 51).setText(`${port ? 'Outlet' : 'Receiver'}${Number.isFinite(chance) ? ` · ${Math.round(chance * 100)}%` : ''}`).setVisible(true);
+    }
+  }
+
   renderLocks(match) {
     for (let side = 0; side < 2; side++) {
       const team = match.ownGoalX(0) === (side ? PITCH.right : PITCH.left) ? 0 : 1;
@@ -243,7 +308,8 @@ export class PitchScene extends Phaser.Scene {
       view.axis.clear().lineStyle(3, COLORS[team], 0.95).lineBetween(x - ex * 0.4, y - ey * 0.4, x + ex, y + ey);
       const angle = Math.atan2(ey, ex);
       view.axis.fillStyle(COLORS[team], 1).fillTriangle(x + ex, y + ey, x + ex - Math.cos(angle - 0.5) * 9, y + ey - Math.sin(angle - 0.5) * 9, x + ex - Math.cos(angle + 0.5) * 9, y + ey - Math.sin(angle + 0.5) * 9);
-      view.label.setText(lock.target ? `${lock.basis} → ${lock.target}` : lock.basis === 'Z' ? '|0〉' : '|+〉');
+      const name = basis => basis === 'Z' ? lock.sign === -1 ? '|1〉' : '|0〉' : lock.sign === -1 ? '|−〉' : '|+〉';
+      view.label.setText(lock.target ? `${name(lock.basis)} → ${name(lock.target)}` : name(lock.basis));
       view.label.setColor(HEX[team]);
     }
   }
@@ -267,14 +333,29 @@ export class PitchScene extends Phaser.Scene {
   event(event) {
     const reduced = this.controller.reducedMotion;
     const color = event.team === undefined ? 0xf4f6ef : COLORS[event.team];
-    if (event.type === 'gate') {
+    if (event.type === 'gate' || event.type === 'laneGate') {
       const view = this.playerViews.get(event.player);
       if (view && !reduced) this.tweens.add({ targets: view.glyph, scaleX: 1.4, scaleY: 1.4, duration: 110, yoyo: true, ease: 'Back.Out' });
-      this.floatingText(event.x, event.y - 40, event.gate === 'RESET' ? '|0〉 reset' : `${event.gate} gate`, HEX[event.team], 23);
+      const gateText = event.gate === 'S' ? 'S · phase +90°' : event.gate === 'S†' ? 'S† · phase −90°' : event.gate === 'T' ? 'T · phase +45°' : `${event.gate} gate`;
+      this.floatingText(event.x, event.y - 40, event.gate === 'RESET' ? '|0〉 reset' : `${gateText}${event.type === 'laneGate' ? ` · lane ${event.path ? 'B' : 'A'}` : ''}`, HEX[event.team], 23);
       this.burst(event.x, event.y, color, reduced ? 3 : 9, 80);
     }
     if (event.type === 'tackle' || event.type === 'reset') this.burst(event.x, event.y, color, reduced ? 3 : 12, 105);
     if (event.type === 'tackle') this.floatingText(event.x, event.y - 38, 'COLLAPSE', '#f4d38c', 20);
+    if (event.type === 'split') {
+      this.burst(event.x, event.y, 0xc1baff, reduced ? 4 : 15, 95);
+      this.floatingText(event.x, event.y - 40, 'TWO PATHS · ONE BALL', '#c1baff', 22);
+    }
+    if (event.type === 'recombine') {
+      this.burst(event.x, event.y, event.port ? 0xc1baff : 0xf4d38c, reduced ? 5 : 20, 110);
+      this.floatingText(event.x, event.y - 40, event.port ? 'INTERFERENCE · OUTLET' : 'INTERFERENCE · RECEIVER', event.port ? '#c1baff' : '#f4d38c', 22);
+    }
+    if (event.type === 'pathCollapse') {
+      this.burst(event.x, event.y, 0xd2d9e7, reduced ? 4 : 12, 95);
+      this.floatingText(event.x, event.y - 40, event.caught ? 'PATH MEASURED · INTERCEPTED' : 'PATH MEASURED · OTHER LANE', '#f4d38c', 21);
+    }
+    if (event.type === 'rebound') this.floatingText(event.x, event.y - 48, 'COLLAPSED · REBOUND', '#dae4eb', 23);
+    if (event.type === 'targets' && !this.controller.match.options.drill) this.controller.ui.toast('New goal targets · Check the glyphs before your next attack');
     if (event.type === 'save') {
       this.floatingText(event.x, event.y - 45, 'SAVED · RESET', '#f4f6ef', 25);
       if (!reduced) this.cameras.main.shake(100, 0.0018);
@@ -286,7 +367,7 @@ export class PitchScene extends Phaser.Scene {
     }
     if (event.type === 'miss') {
       this.burst(event.x, event.y, 0xd2d9e7, reduced ? 5 : 17, 125);
-      this.floatingText(event.x, event.y - 48, event.reason === 'wide' ? 'WIDE · PLAY ON' : 'MEASUREMENT FAILED', '#dae4eb', 25);
+      if (event.reason === 'wide') this.floatingText(event.x, event.y - 48, 'WIDE · PLAY ON', '#dae4eb', 25);
     }
   }
 

@@ -23,6 +23,9 @@ export function applyGate(state, gate) {
     case 'H': return { x: z, y: -y, z: x };
     case 'Z': return { x: -x, y: -y, z };
     case 'S': return { x: -y, y: x, z };
+    case 'S†':
+    case 'SDG':
+    case 'Sdg': return { x: y, y: -x, z };
     case 'T': {
       const c = Math.SQRT1_2;
       return { x: c * (x - y), y: c * (x + y), z };

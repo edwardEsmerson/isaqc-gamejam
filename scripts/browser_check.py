@@ -22,7 +22,7 @@ with sync_playwright() as p:
     assert page.locator('.team-card').count() == 2
     page.get_by_label('Match length').select_option('60')
     page.locator('[data-action="howto-local"]').click()
-    assert page.locator('.instruction').count() == 3
+    assert page.locator('.instruction').count() == 4
     page.screenshot(path=str(artifacts / 'tutorial.png'))
     page.locator('[data-action="start"]').click()
     page.wait_for_function('window.__qubitFC.controller.match.phase === "play"')

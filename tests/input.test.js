@@ -252,7 +252,7 @@ test('the frame cache polls once for all public consumers and blur clears latche
   const rig = browser(t);
   rig.input.setActive(true);
   assert.equal(rig.keyDown('ArrowLeft').defaultPrevented, true);
-  assert.equal(rig.keyDown('KeyQ').defaultPrevented, false);
+  assert.equal(rig.keyDown('KeyV').defaultPrevented, false);
   rig.keyDown('KeyG');
   rig.frame();
   const polls = rig.polls;

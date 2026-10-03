@@ -1,5 +1,5 @@
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
-const GATE_NOTES = { X: [220, 440], H: [329.63, 493.88, 659.25], Z: [246.94, 369.99], S: [293.66, 440], T: [369.99, 554.37] };
+const GATE_NOTES = { X: [220, 440], H: [329.63, 493.88, 659.25], Z: [246.94, 369.99], S: [293.66, 440], 'S†': [440, 293.66], T: [369.99, 554.37] };
 
 /** Compact procedural stadium soundtrack. No network assets or autoplay attempts. */
 export class MatchAudio {
