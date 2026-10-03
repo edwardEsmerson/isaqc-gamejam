@@ -1,0 +1,297 @@
+{
+  "authorship": "Original authored pixel patterns and palette; generated locally, not with PixelLab.",
+  "generator": "scripts/generate-demo-art.py",
+  "pixelsPerUnit": 16,
+  "referenceResolution": [
+    640,
+    360
+  ],
+  "palette": {
+    ".": "00000000",
+    "o": "171a32",
+    "n": "11152b",
+    "v": "24203f",
+    "p": "34304f",
+    "b": "253650",
+    "g": "385565",
+    "t": "407d82",
+    "m": "65b69a",
+    "l": "a3dfbd",
+    "a": "dbf4d2",
+    "h": "e37bab",
+    "H": "ffb2cf",
+    "r": "a34883",
+    "s": "f3c5b5",
+    "S": "ffe0c5",
+    "w": "f8f0e8",
+    "c": "b8ced6",
+    "d": "4a678c",
+    "B": "719ad3",
+    "k": "293f63",
+    "y": "f5d08a",
+    "Y": "fff0bb",
+    "q": "69d6da",
+    "Q": "c0fcf0",
+    "u": "9877c6",
+    "U": "d2b4f1",
+    "e": "705066"
+  },
+  "assets": [
+    {
+      "path": "Generated/Demo/Backgrounds/observatory-night.png",
+      "size": [
+        640,
+        360
+      ],
+      "sha256": "5a66024046311c419b34e4a33e8ce8bff4a3305efe538d7b1d53802b28f1f673"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-dash.png",
+      "size": [
+        24,
+        24
+      ],
+      "sha256": "e072e634f235aff7e55a5e448a7b9d96452f13eb5e4f5061a662a00ee4cb4bac"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-idle-0.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "4437ff29dfb9a9a0e5839c3e18862978667058b937f7e6f02ad27812346e39c9"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-idle-1.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "4437ff29dfb9a9a0e5839c3e18862978667058b937f7e6f02ad27812346e39c9"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-idle-2.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "0bc65d9146fdf8711b3d74ca1385e6850101038a442847c6906c22d9ab603aee"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-idle-3.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "bd66c3739aae10dec5b72a632afc1051384839640d89bceb83fef4b1461ecd18"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-jump.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "a6f118d8106fc33794220ae7ffe61feccb0f6d4622cac0560ec22c3e86e30e27"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-run-0.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "e9c134d7967723a8e228b8e0ff2df6423412da6edc41e28197ea26a660803053"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-run-1.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "3bdeb69cc92bbe1d5d6aa47be98c11ec7050abcc4dc05ffdb80564194157d12b"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-run-2.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "64b7588a5a8b56777e13d7d7c3e4b69e872eddb4e2fa2545e51df7d4ab77322c"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-run-3.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "0148300a82e844dd9e44377dc5b987b88644585c499cce44edc6289897e4300e"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-run-4.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "27688d4d1122916051fb3e8400c11100d584d82429793d53e7fe6f6cbd243a03"
+    },
+    {
+      "path": "Generated/Demo/Characters/fleabag-run-5.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "4e17b92f5f4d8647e7d39bc10995a9052a91943e3b7b35f6d9db1f4c299c6f89"
+    },
+    {
+      "path": "Generated/Demo/Characters/hilary.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "9d88d2c3bfc807cf4e95d0224b570467df78dc48272eaf1bb0044cb9b2203579"
+    },
+    {
+      "path": "Generated/Demo/Characters/schrodinger.png",
+      "size": [
+        24,
+        32
+      ],
+      "sha256": "8d8067583f266759c62f26a7961a5fab5dfb1b925859c1287b27ec8929c64bde"
+    },
+    {
+      "path": "Generated/Demo/Decor/column.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "2a41d14f0efc51470d94de85e140f4cbb0507052b1fdab81c8f1021ee05248da"
+    },
+    {
+      "path": "Generated/Demo/Decor/fern.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "3a8abe0bb762730c21a76e9cfd184bb7e87757dc95af702570c27dc805d0bd52"
+    },
+    {
+      "path": "Generated/Demo/Decor/lantern.png",
+      "size": [
+        16,
+        24
+      ],
+      "sha256": "db755f9dec66e1bbcd133202fe70f517be6f0f94b56d1afa952f5b9ea3d3829c"
+    },
+    {
+      "path": "Generated/Demo/Decor/quantum-motes.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "053b8ede46176fea717e7d6bcb4df59bcb83a0a291ce191eccd3b652d7db81e6"
+    },
+    {
+      "path": "Generated/Demo/Decor/stone-arch.png",
+      "size": [
+        32,
+        48
+      ],
+      "sha256": "c5e400f5b79dd801dc8ff8a296fd9d8f22d83f535bff955673d22880b28b8f05"
+    },
+    {
+      "path": "Generated/Demo/Props/checkpoint.png",
+      "size": [
+        16,
+        32
+      ],
+      "sha256": "c4f12273da9d78544ec91a82a5e161fe399e018d52a5b80cc467f65450ac7d16"
+    },
+    {
+      "path": "Generated/Demo/Props/exit-door.png",
+      "size": [
+        32,
+        48
+      ],
+      "sha256": "25748d916b5fdfa0df7323edd8cde25f5580cabba1c0e70cb7589a0a8add2bf7"
+    },
+    {
+      "path": "Generated/Demo/Props/hilary-box.png",
+      "size": [
+        24,
+        24
+      ],
+      "sha256": "f562dc2dbdf9cd7182a8d3111975f6b7ca65d94e1309ddaac8728227abaa09ef"
+    },
+    {
+      "path": "Generated/Demo/Props/quantum-console.png",
+      "size": [
+        24,
+        24
+      ],
+      "sha256": "ace50e274341c7748e03db1778cc882d19bd2becdbc959c07e1d7ce5f4777ce5"
+    },
+    {
+      "path": "Generated/Demo/Props/spikes.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "e99579b9203a6a6cd0eac751997a313d9aff0c1db760f900daad6288320c9c86"
+    },
+    {
+      "path": "Generated/Demo/Tiles/bridge-one.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "db2414c22007560713dbff0c5afa2aff115ac77e38d1ba3c312d889083058ba6"
+    },
+    {
+      "path": "Generated/Demo/Tiles/bridge-zero.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "50ab098d201472c9ee04efc11ec083dc78182b07676306e1fdcd0d557c5365bb"
+    },
+    {
+      "path": "Generated/Demo/Tiles/stone-fill.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "2e6841859fe289a3f70c65d4fdb19ba913f471c10e40d247f3d1909637e65489"
+    },
+    {
+      "path": "Generated/Demo/Tiles/stone-left.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "076b0b31cbbb992c3972421c89bbb0ab030c752ac3b47e21fedaa0fe8c4af44c"
+    },
+    {
+      "path": "Generated/Demo/Tiles/stone-right.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "cac6e139e7c6f668a4c27cba22bdbc2921c0260d17abcbb91deeb6f9302e6ea6"
+    },
+    {
+      "path": "Generated/Demo/Tiles/stone-single.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "17db192066a6c3be7a6ba40a47e2ba4c8fd4d015def26ac69451e73a86b7b800"
+    },
+    {
+      "path": "Generated/Demo/Tiles/stone-top.png",
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "5055a6d6fe171d15324d3d03d941867e5d541ec0a856d0440ea3f467872f0e35"
+    }
+  ]
+}

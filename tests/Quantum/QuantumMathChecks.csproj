@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <QuantumTargetFramework Condition="'$(QuantumTargetFramework)' == ''">net8.0</QuantumTargetFramework>
+    <TargetFramework>$(QuantumTargetFramework)</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../unity/Assets/Scripts/Quantum/QubitState.cs" Link="Production/QubitState.cs" />
+  </ItemGroup>
+</Project>

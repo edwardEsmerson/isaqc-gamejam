@@ -16,7 +16,7 @@ After cloning, run `sh scripts/setup-git.sh`. This sets fast-forward-only pulls,
 simple pushes, and pruning of stale remote branches for this checkout only.
 Set your own Git name and email if they are not already configured.
 
-Install Unity Editor `6000.3.25f1` with Unity Hub and open the `unity/` project.
+Install Unity Editor `6000.6.4f1` with Unity Hub and open the `unity/` project.
 Let Unity resolve the package versions in `unity/Packages/manifest.json`. If you
 use PixelLab through Codex, run `sh scripts/setup-pixellab.sh` and provide the
 `PIXELLAB_API_KEY` environment variable to the Codex process.
@@ -84,8 +84,10 @@ git push origin --delete feat/measurement-feedback
 Substitute the name of your task branch. Do not merge unfinished or untested
 work. Record third-party libraries and assets in `THIRD_PARTY.md`.
 
-The Unity project is a scaffold; gameplay and automated tests are not present
-yet. The GitHub check detects whitespace errors only; it does not establish
+Run `sh scripts/check-quantum.sh` for repeatable quantum math checks. On Windows,
+`scripts/check-unity.ps1` imports and compiles the project, generates missing
+scenes, and verifies saved assets; still play through changed interactions in
+Unity. The GitHub check detects whitespace errors only and does not establish
 gameplay correctness.
 
 ## GitHub settings
