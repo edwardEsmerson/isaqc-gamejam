@@ -1,5 +1,7 @@
 # Qubit FC
 
+**[Play Qubit FC in your browser](https://edwardesmerson.github.io/isaqc-gamejam/)**
+
 Six-a-side football. Every completed pass is a quantum gate.
 
 Two teams, twelve players, one qubit. Build the ball's state through passing, protect it from pressure, and aim for the defending keeper's measurement lock. Football skill gets the shot past the keeper; the Born rule decides whether it counts.
