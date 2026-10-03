@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Five-a-side football. Every pass is a quantum gate.",
+  "description": "Six-a-side football. Every pass is a quantum gate.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",

@@ -159,6 +159,7 @@ export class Match {
       // Both teams start in their own half, giving the first pass breathing room.
       if (player.role !== 'GK') {
         player.x = direction > 0 ? Math.min(home.x, PITCH.cx - 160) : Math.max(home.x, PITCH.cx + 160);
+        if (player.role === 'FWD') player.x = PITCH.cx - direction * 85;
       }
       player.vx = 0; player.vy = 0; player.fx = direction; player.fy = 0;
       player.charge = 0; player.dive = 0; player.cooldown = 0;

@@ -336,7 +336,8 @@ export class PitchScene extends Phaser.Scene {
     if (event.type === 'gate' || event.type === 'laneGate') {
       const view = this.playerViews.get(event.player);
       if (view && !reduced) this.tweens.add({ targets: view.glyph, scaleX: 1.4, scaleY: 1.4, duration: 110, yoyo: true, ease: 'Back.Out' });
-      const gateText = event.gate === 'S' ? 'S · phase +90°' : event.gate === 'S†' ? 'S† · phase −90°' : event.gate === 'T' ? 'T · phase +45°' : `${event.gate} gate`;
+      let gateText = event.gate === 'S' ? 'S · phase +90°' : event.gate === 'S†' ? 'S† · phase −90°' : event.gate === 'T' ? 'T · phase +45°' : `${event.gate} gate`;
+      if (event.type === 'gate' && ['S', 'S†', 'T'].includes(event.gate) && event.stateBefore && Math.hypot(event.stateBefore.x, event.stateBefore.y) < 0.001) gateText = `${event.gate} · state unchanged`;
       this.floatingText(event.x, event.y - 40, event.gate === 'RESET' ? '|0〉 reset' : `${gateText}${event.type === 'laneGate' ? ` · lane ${event.path ? 'B' : 'A'}` : ''}`, HEX[event.team], 23);
       this.burst(event.x, event.y, color, reduced ? 3 : 9, 80);
     }

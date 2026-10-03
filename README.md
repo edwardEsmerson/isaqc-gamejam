@@ -1,8 +1,8 @@
 # Qubit FC
 
-Five-a-side football. Every completed pass is a quantum gate.
+Six-a-side football. Every completed pass is a quantum gate.
 
-Two teams, ten players, one qubit. Build the ball's state through passing, protect it from pressure, and aim for the defending keeper's measurement lock. Football skill gets the shot past the keeper; the Born rule decides whether it counts.
+Two teams, twelve players, one qubit. Build the ball's state through passing, protect it from pressure, and aim for the defending keeper's measurement lock. Football skill gets the shot past the keeper; the Born rule decides whether it counts.
 
 ![Qubit FC match with gate players, live Bloch sphere, keeper locks and broadcast HUD](docs/screenshots/match.png)
 
@@ -23,12 +23,15 @@ Standard matches have two three-minute halves. The showcase setting uses one-min
 | --- | --- | --- | --- |
 | Move / aim pass | W A S D | Arrow keys | Left stick / D-pad |
 | Pass | F | K | A / Cross |
+| Split through-ball | Q | O | LB / L1 |
 | Hold, then release to shoot | G | L | B / Circle |
-| Switch defender / call press | H | J | X / Square |
+| Switch defender / press / split support | H | J | X / Square |
 | Switch your keeper's reading | R | U | Y / Triangle |
 | Sprint | Left Shift | Right Shift | RT / RB |
 
-Pass in the direction you face; a dashed line previews the best teammate. Control moves to the receiver. Your selected player has an arrow, a scoring probability bar, and a charging shot bar. Every team has an X defender, H and Z midfielders, a T striker, and a keeper who resets the qubit.
+Pass in the direction you face; the preview identifies the best teammate and the scoring odds after that teammate's gate. It helps plan the circuit, while defenders and pressure can still change the outcome before reception. Control moves to the receiver. Your selected player has an arrow, a scoring probability bar, and a charging shot bar. Every team has six players: a keeper who resets the qubit, an X defender, H and Z midfielders, and S and S† attackers.
+
+The split through-ball has a six-second cooldown. It sends two ghost lanes toward the best outfield receiver, with an alternate teammate as the other possible outlet. During the split, tap switch (H / J / controller X) to cycle eligible gate teammates, then move the selected player into either ghost lane. Gate players touching a lane change that lane's quantum evolution. A defender touching a ghost measures which path the ball takes; the defender either wins that path or the other lane survives. When both lanes reach the junction, interference decides which of two outlets receives the ball. Control automatically follows the real ball after path collapse or output selection.
 
 ## Quantum model
 
@@ -38,26 +41,36 @@ The ball is a Bloch vector **r**, including mixed states inside the unit sphere.
 P(goal) = (1 + r · n) / 2
 ```
 
-For a pure state, this is exactly `cos²(theta/2)`. North against the north lock scores with certainty; south never scores. The center gives 50% against every lock.
+For a pure state, this is exactly `cos²(theta/2)`. North against a north lock scores with certainty; south against that same lock never scores. The center gives 50% against every lock. Arrow length is **state strength**: the length of the Bloch vector, which distinguishes pure states from mixed states. It is not a general measure of quantum coherence; a full-length north or south state has no off-diagonal coherence in the Z basis.
+
+Each net starts with a randomly selected target: `|0〉` (+Z), `|1〉` (−Z), `|+〉` (+X), or `|−〉` (−X). After every scored goal, the targets are selected again with the previous target excluded. Read the net glyph before building an attack.
 
 - **X:** `(x, y, z) → (x, −y, −z)`.
 - **H:** `(x, y, z) → (z, −y, x)`.
 - **Z:** `(x, y, z) → (−x, −y, z)`.
-- **T:** rotate about z by π/4. The math module also supports S, a π/2 rotation.
-- **Pressure:** a depolarizing channel continuously shortens r. Gates preserve length, so passing cannot repair it.
+- **S:** rotate about z by +π/2, a **+90° phase change**: `(x, y, z) → (−y, x, z)`.
+- **S†:** the inverse −π/2 rotation: `(x, y, z) → (y, −x, z)`. S followed by S† restores any input state. Both leave north and south at their poles; phase gates matter when the state has transverse components.
+- **Pressure:** a depolarizing channel continuously shortens r. Gates preserve length, so ordinary gate passes cannot repair it.
 - **Turnover:** a projective Z measurement erases phase and returns north or south according to the current Born probability.
 - **Keeper reception / kickoff:** reset to fresh north.
-- **Keeper reading:** rotate the lock between +Z and +X over two seconds. Rotation pauses inside the defending penalty box. The globe's hollow gold marker and goal glyph show the current axis, including partial rotations.
-- **Shot:** physical contact and keeper saves occur first. A ball entering the goal then gets a half-second measurement beat, snapping to the positive or negative lock axis before the result.
+- **Keeper reading:** rotate between Z and X over two seconds while preserving the target's sign: `|0〉 ↔ |+〉` or `|1〉 ↔ |−〉`. Rotation pauses inside the defending penalty box. The globe's hollow gold marker and goal glyph show the current target, including partial rotations.
+- **Shot:** physical contact and keeper saves occur first. A ball entering the goal then gets a half-second measurement beat. Success collapses to the target; rejection collapses to its opposite and rebounds into play. A failed measurement is not a keeper reset.
+- **Split pass:** a separate path qubit is coupled to the ball qubit. Conditional lane gates, path measurements, and a final two-port interferometer operate on their joint density matrix. The probability of the two output ports sums to one; destructive interference at one outlet routes probability to the other.
 
-Two useful routes, starting from a fresh north state:
+Useful routes, starting from a fresh north state:
 
 | Reception sequence | Result |
 | --- | --- |
 | H → Z → H | South, identical to X. Reveals how phase changes later outcomes. |
-| H → T → H → T → Z → T → Z | `x = z = 1/√2`, `y = 0`: 85.36% against either fixed keeper reading. |
+| H → S → S† | +X. S turns toward +Y, then S† restores the pre-S state. |
+| H → S | +Y, giving 50% against either X or Z target. |
+| S → H | +X. The same gates in a different order give a different result. |
 
-The hedge falls toward 50% under pressure. H → T → H alone is **not** an X/Z hedge: its X probability is 50%. Only receptions apply gates; dribbling leaves the state unchanged. Intermediate teammates also count, so plan the entire passing route.
+Ordinary passes apply gates on reception; dribbling leaves the state unchanged. Intermediate teammates also count, so plan the entire passing route. X, H, Z, S, and S† are Clifford gates: ordinary passing from fresh north reaches only the six Pauli poles, so it cannot prepare the old 85.36% X/Z hedge. The quantum library retains verified T (+45°) math, but there is no T player.
+
+Advanced split play can reach additional states: a conditional H on one lane followed by the bright-port outcome can produce `x = z = 1/√2` from north, before the receiving player's gate. That is an 85.36% hedge against the positive X/Z target pair. Conditional-H is a non-Clifford operation on the combined path–ball system; account for the receiver's gate before shooting.
+
+**Gate drill** starts with an outfield player holding a fresh north ball and a fixed south `|1〉` goal target. Three passes follow H → Z → H; each receiver faces the next player, so repeated pass presses teach the circuit. A wrong gate restarts the setup. Shoot with the south state to complete the one-goal drill. Normal matches then restore randomly changing net targets.
 
 ## Build and checks
 
@@ -73,7 +86,7 @@ The production build is in `dist/`. Serve it over HTTP with `npm run preview` or
 
 | File | Responsibility |
 | --- | --- |
-| `src/game/quantum.js` | Pure Bloch-vector gates, measurements and channels |
+| `src/game/quantum.js` | Bloch-vector gates, measurements, channels and path–ball density matrices |
 | `src/game/simulation.js` | Fixed-step football, AI, match lifecycle and stats |
 | `src/game/scene.js` | Procedural stadium, players, ball, camera, globe and radar |
 | `src/input.js` | Two-player keyboard/gamepad controls, claims and input edges |
@@ -92,6 +105,6 @@ All primary gameplay code, pitch graphics, player/ball visuals, icons and synthe
 
 ## Scope
 
-The playable core includes local multiplayer, solo practice, spectator mode, five-player formations, gate passes, pressure, goalkeeper readings, collapse/reset, physical saves, measurement shots, two halves, stats, tutorials, audio and accessibility settings. The spatial split through-ball remains a stretch feature; a single Bloch vector cannot honestly represent its two-lane interference, so it needs a separate spatial state model.
+The playable game includes local multiplayer, solo practice, spectator mode, the HZH gate drill, six-player formations, pass previews, gate passes, pressure, randomly changing signed goal targets, goalkeeper readings, collapse/reset, physical saves, measurement shots and rebounds, split through-balls with controllable gate support, two halves, stats, tutorials, audio and accessibility settings. Split passes use a separate spatial path state coupled to the ball qubit; their interference is not represented by a single Bloch arrow.
 
 See [design notes](docs/DESIGN.md) for the model and visual direction, and [showcase guide](docs/SHOWCASE.md) for a short demonstration plan.
