@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "skills": {
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "ref": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
+    },
+    "game-feel": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "d4b0e35550c55ae70bdfcab4ef5a0e94610438a9",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/game-feel/SKILL.md",
+      "computedHash": "fd8a092926b904a974494ef9e9d123c6a5f872dfaf2ab8f1affd9d015ec95dc3"
+    },
+    "performance-optimization": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "d4b0e35550c55ae70bdfcab4ef5a0e94610438a9",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/performance-optimization/SKILL.md",
+      "computedHash": "5adf560f7c61bd52049781c86c90c88dbd471624acb185803cb5433e000112c7"
+    },
+    "phaser-arcade-physics": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "01f3433e2c7b53fb0cd365af0b8b112d9483c162",
+      "sourceType": "github",
+      "skillPath": "skills/web-engines/phaser-arcade-physics/SKILL.md",
+      "computedHash": "3030a9fbb81e97731d0a095073cdd6bb37345277aa49da618e10a1df5500786a"
+    },
+    "phaser-core": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "01f3433e2c7b53fb0cd365af0b8b112d9483c162",
+      "sourceType": "github",
+      "skillPath": "skills/web-engines/phaser-core/SKILL.md",
+      "computedHash": "820098da77b9679f99006a9390366a233b5dfa69d34823654451ef677e4c5ea5"
+    },
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "ref": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+      "sourceType": "github",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "ad5b1fc52807e9afa4635e59218a026b164dc58b6c3f41b0f7c644dcd6ccf572"
+    }
+  }
+}

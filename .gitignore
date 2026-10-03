@@ -1,0 +1,13 @@
+node_modules/
+.opencode/node_modules/
+.opencode/package.json
+.opencode/bun.lock
+.opencode/bun.lockb
+.venv/
+__pycache__/
+dist/
+test-results/
+playwright-report/
+.env
+.env.*
+!.env.example

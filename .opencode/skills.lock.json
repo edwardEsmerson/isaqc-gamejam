@@ -1,0 +1,86 @@
+{
+  "lockVersion": 1,
+  "skills": [
+    {
+      "name": "frontend-design",
+      "repository": "https://github.com/anthropics/skills.git",
+      "revision": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+      "sourceFolder": "skills/frontend-design",
+      "installedFolder": ".agents/skills/frontend-design",
+      "license": "Apache-2.0",
+      "licenseFile": ".agents/skills/frontend-design/LICENSE.txt",
+      "dependencies": []
+    },
+    {
+      "name": "webapp-testing",
+      "repository": "https://github.com/anthropics/skills.git",
+      "revision": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+      "sourceFolder": "skills/webapp-testing",
+      "installedFolder": ".agents/skills/webapp-testing",
+      "license": "Apache-2.0",
+      "licenseFile": ".agents/skills/webapp-testing/LICENSE.txt",
+      "dependencies": [
+        "Python 3 for the examples and helper script",
+        "Python package playwright for browser automation examples",
+        "Playwright Chromium browser installation for Chromium examples"
+      ]
+    },
+    {
+      "name": "game-feel",
+      "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills.git",
+      "revision": "d4b0e35550c55ae70bdfcab4ef5a0e94610438a9",
+      "sourceFolder": "skills/disciplines/game-feel",
+      "installedFolder": ".agents/skills/game-feel",
+      "license": "Apache-2.0",
+      "licenseFile": ".opencode/third-party/awesome-gamedev-agent-skills/LICENSE",
+      "dependencies": [
+        "No package dependency; examples reference Godot 4.7 and Unity 6.3 LTS engine APIs"
+      ]
+    },
+    {
+      "name": "performance-optimization",
+      "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills.git",
+      "revision": "d4b0e35550c55ae70bdfcab4ef5a0e94610438a9",
+      "sourceFolder": "skills/disciplines/performance-optimization",
+      "installedFolder": ".agents/skills/performance-optimization",
+      "license": "Apache-2.0",
+      "licenseFile": ".opencode/third-party/awesome-gamedev-agent-skills/LICENSE",
+      "dependencies": [
+        "No package dependency; profiling examples refer to Godot 4.7, Unity 6.3 LTS, and Unreal Engine 5.8"
+      ]
+    },
+    {
+      "name": "phaser-core",
+      "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills.git",
+      "revision": "01f3433e2c7b53fb0cd365af0b8b112d9483c162",
+      "sourceFolder": "skills/web-engines/phaser-core",
+      "installedFolder": ".agents/skills/phaser-core",
+      "license": "Apache-2.0",
+      "licenseFile": ".opencode/third-party/awesome-gamedev-agent-skills/LICENSE",
+      "dependencies": [
+        "Phaser 3.90 in the consuming JavaScript or TypeScript project"
+      ]
+    },
+    {
+      "name": "phaser-arcade-physics",
+      "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills.git",
+      "revision": "01f3433e2c7b53fb0cd365af0b8b112d9483c162",
+      "sourceFolder": "skills/web-engines/phaser-arcade-physics",
+      "installedFolder": ".agents/skills/phaser-arcade-physics",
+      "license": "Apache-2.0",
+      "licenseFile": ".opencode/third-party/awesome-gamedev-agent-skills/LICENSE",
+      "dependencies": [
+        "Phaser 3.90 Arcade Physics in the consuming JavaScript or TypeScript project"
+      ]
+    }
+  ],
+  "thirdParty": [
+    {
+      "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills.git",
+      "revision": "d4b0e35550c55ae70bdfcab4ef5a0e94610438a9",
+      "sourceGroup": ".opencode/third-party/awesome-gamedev-agent-skills",
+      "licenseFile": ".opencode/third-party/awesome-gamedev-agent-skills/LICENSE",
+      "noticeFile": ".opencode/third-party/awesome-gamedev-agent-skills/NOTICE"
+    }
+  ]
+}
