@@ -2,50 +2,28 @@
 
 ## Project Structure & Module Organization
 
-This repository supports ISAQC’s QURIOSITY quantum game jam. Currently, it contains documentation rather than a checked-in game implementation:
-
-- `about.md`: challenge tracks, judging criteria, event rules, and submission checklist.
-- `README.md`: project introduction and intended prototype startup instructions.
-- `to-do.md`: contributor workflow ideas and planning notes.
-- `CONTRIBUTING.md`: shared team workflow and review requirements.
-- `THIRD_PARTY.md`: library and asset attribution ledger.
-- `.github/`: issue templates, pull request template, and repository checks.
-- `scripts/setup-git.sh`: local Git defaults for a team checkout.
-
-No game source, test, or asset directories are established yet. When adding the game, document their locations and keep gameplay logic, quantum calculations, and assets organized into separate modules.
+This repository supports ISAQC’s QURIOSITY quantum game jam. The Unity 6.3 project is in `unity/`: gameplay scripts belong in `Assets/Scripts/Gameplay`, quantum rules in `Assets/Scripts/Quantum`, interface code in `Assets/Scripts/UI`, scenes in `Assets/Scenes`, and PixelLab art in `Assets/Art/Source` or `Assets/Art/Generated`. Keep generated Unity caches out of Git. Event, contribution, and attribution guidance lives in `about.md`, `CONTRIBUTING.md`, and `THIRD_PARTY.md`.
 
 ## Build, Test, and Development Commands
 
-Configure a checkout with:
-
-```bash
-sh scripts/setup-git.sh
-```
-
-No game build, test, lint, or formatting scripts are currently defined. Add verified commands to the README when introducing tooling; do not assume `npm test` or `npm run build` exists.
-
-Run `git diff --check` and `git diff --cached --check` before committing to catch whitespace errors. GitHub also checks committed changes on pushes and pull requests.
+- `sh scripts/setup-git.sh` configures Git defaults for this checkout.
+- Install Unity Editor `6000.3.25f1` with Unity Hub, open `unity/`, and let Package Manager resolve its pinned dependencies.
+- `sh scripts/setup-pixellab.sh` configures PixelLab MCP for Codex. Set `PIXELLAB_API_KEY` in the Codex process environment; never commit it.
+- Build in Unity through **File > Build Profiles**. No automated Unity build or test command is configured.
+- Run `git diff --check` and `git diff --cached --check` before committing.
 
 ## Coding Style & Naming Conventions
 
-Keep Markdown concise, use descriptive headings, and link to repository files with relative paths. No language-specific indentation or naming conventions have been established. Follow the chosen stack’s conventions consistently and document them when source code is added. Keep generated dependencies and build outputs untracked, as specified by `.gitignore`.
+Use C# with four-space indentation, PascalCase for types and public members, and camelCase for private fields and locals. Give each `MonoBehaviour` its own matching `.cs` filename. Keep scene behavior in components and quantum calculations in small, deterministic C# types. Use descriptive scene, prefab, and asset names such as `measurement-room.unity` and `player-dash.png`.
 
 ## Testing Guidelines
 
-No testing framework or coverage threshold is configured. Review documentation links and commands manually. For future gameplay changes, verify the core interaction loop and quantum behavior; add deterministic tests for quantum calculations using the selected framework’s naming conventions. Record validation steps and results in pull requests.
+No test framework is configured yet. Compile in Unity and play through the changed interaction. When quantum rules are added, cover state transitions and measurement outcomes with repeatable tests. Summarize checks at handoff.
 
-## Commit & Pull Request Guidelines
+## Branching & Merge Guidelines
 
-Follow [CONTRIBUTING.md](CONTRIBUTING.md). Before editing, inspect the current branch and `git status`; preserve teammates' and the user's existing work.
-
-- Use `feat/<task>`, `fix/<task>`, `docs/<task>`, or `chore/<task>` branches off an updated `main`. Reuse a branch when continuing the same task.
-- Commit small, coherent milestones with a short imperative subject, such as `Add measurement feedback`. Stage explicit paths or hunks; do not sweep unrelated changes into a commit.
-- Push after each validated milestone and before handing off work. If access or network restrictions block a push, report the local commit and the remaining step.
-- Never force-push shared branches, rewrite published history, or discard another contributor's changes. Do not commit credentials, dependencies, or generated builds.
-- At the end of a task, run the available checks, summarize validation and limitations, and open or update a pull request when GitHub access is available. Suggest merging only after checks and teammate review; do not merge automatically.
-
-Pull requests should explain the change, link relevant issues when available, describe validation, and include screenshots or gameplay recordings for visual changes.
+Follow `CONTRIBUTING.md`: use `feat/`, `fix/`, `docs/`, or `chore/` branches, make small imperative commits, and stage explicit files. During the jam, share branches and merge them directly into `main`; do not create pull requests. Coordinate before merging, run the relevant checks, and never force-push or discard another contributor's work. GitHub must allow direct updates to `main` for this workflow.
 
 ## Game-Jam Requirements
 
-Follow `about.md`: quantum mechanics must drive gameplay. Write primary gameplay code during the event window, declare third-party libraries and assets in submission documentation, and preserve incremental Git history for review.
+Follow `about.md`: quantum mechanics must drive gameplay, primary gameplay code must be written during the event window, third-party code and art must be declared, and Git history must show incremental work.
