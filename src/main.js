@@ -23,6 +23,7 @@ const controller = {
   reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   ready() { this.ui.showTitle(); },
   tick(dt) {
+    this.ui.setDevices(input.assignedPads);
     const global = input.consumeGlobalActions();
     const joins = input.consumeJoinEvents();
     if (this.mode === 'menu' && this.ui.screen === 'join') {

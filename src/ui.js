@@ -9,7 +9,7 @@ const keys = (team, compact = false) => team === 0
 export class GameUI {
   constructor(root, callbacks = {}) {
     this.root = root; this.callbacks = callbacks; this.screen = 'title'; this.isMenu = true;
-    this.joinedTeams = ['Keyboard', 'Keyboard']; this.pendingOptions = { aiTeams: [] };
+    this.joinedTeams = ['Keyboard', 'Keyboard']; this.pendingOptions = { aiTeams: [] }; this.pads = [null, null];
     this.settings = { halfDuration: 180, expert: false, sound: true, reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches };
     try { Object.assign(this.settings, JSON.parse(localStorage.getItem('qubit-fc-settings') || '{}')); } catch { /* Storage is optional. */ }
     this.settings.halfDuration = this.settings.halfDuration === 60 ? 60 : 180;
@@ -32,6 +32,7 @@ export class GameUI {
   }
 
   getSettings() { return { ...this.settings }; }
+  setDevices(pads) { this.pads = pads; }
   applySettings() {
     this.root.classList.toggle('reduced-motion', this.settings.reducedMotion);
     this.root.querySelector('[data-action="sound"]').setAttribute('aria-pressed', String(this.settings.sound));
@@ -141,9 +142,10 @@ export class GameUI {
       const player = match.getControlled(team);
       const ai = match.aiTeams.has(team);
       nodes[`control-label-${team}`].textContent = `${ai ? 'CPU' : `P${team + 1}`} · ${TEAMS[team]}${player ? ` · ${player.gate === 'RESET' ? 'keeper' : player.gate}` : ''}`;
-      if (this[`control-ai-${team}`] !== ai) {
-        this[`control-ai-${team}`] = ai;
-        nodes[`control-keys-${team}`].innerHTML = ai ? '<span class="control-line">Tactical AI · passing, pressure &amp; keeper reads</span>' : keys(team, true);
+      const device = ai ? 'ai' : this.pads[team] !== null ? 'pad' : 'keyboard';
+      if (this[`control-device-${team}`] !== device) {
+        this[`control-device-${team}`] = device;
+        nodes[`control-keys-${team}`].innerHTML = ai ? '<span class="control-line">Tactical AI · passing, pressure &amp; keeper reads</span>' : device === 'pad' ? '<span class="control-line"><kbd>◉</kbd> Move <kbd>A</kbd> Pass <kbd>B</kbd> Shoot</span><span class="control-line secondary-controls"><kbd>X</kbd> Switch / press <kbd>Y</kbd> Reading <kbd>RT</kbd> Sprint</span>' : keys(team, true);
       }
     }
     const strength = Math.hypot(match.ball.state.x, match.ball.state.y, match.ball.state.z);

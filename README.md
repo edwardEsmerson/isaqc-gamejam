@@ -4,6 +4,8 @@ Five-a-side football. Every completed pass is a quantum gate.
 
 Two teams, ten players, one qubit. Build the ball's state through passing, protect it from pressure, and aim for the defending keeper's measurement lock. Football skill gets the shot past the keeper; the Born rule decides whether it counts.
 
+![Qubit FC match with gate players, live Bloch sphere, keeper locks and broadcast HUD](docs/screenshots/match.png)
+
 ## Play locally
 
 Requires Node.js 20.19+ or 22.12+ and a modern desktop browser.
@@ -65,7 +67,7 @@ npm run build
 npm run preview
 ```
 
-The production build is in `dist/`. Serve it over HTTP with `npm run preview` or any static host. Quantum and simulation checks cover gate identities, the hedge, pressure conservation, completed passes, keeper saves/reset, interception collapse, board rebounds, shot outcomes and complete matches. The renderer and UI are checked in Chromium with the available Playwright installation.
+The production build is in `dist/`. Serve it over HTTP with `npm run preview` or any static host. Quantum, simulation and input checks cover gate identities, the hedge, pressure conservation, completed passes, keeper saves/reset, interception collapse, board rebounds, shot outcomes, complete matches and independent input devices. With Python Playwright installed, run `python3 scripts/browser_check.py` while the development server is running to check the full UI and control flow. Screenshots go to `/tmp/qubit-fc-checks` by default; `QUBIT_FC_URL` and `QUBIT_FC_ARTIFACTS` override the URL and output directory.
 
 ## Source layout
 

@@ -163,8 +163,9 @@ export class MatchAudio {
     const now = this.context.currentTime;
     if (this._voices.size > 42) return;
     switch (type) {
+      case 'touch':
       case 'kick': {
-        const power = clamp(typeof event === 'number' ? event : event.power ?? 0.5);
+        const power = clamp(typeof event === 'number' ? event : event.power ?? (type === 'touch' ? 0.12 : 0.5));
         const variation = 0.96 + Math.random() * 0.08;
         this._tone(150 * variation, 42, 0.1 + power * 0.04, 0.12 + power * 0.08);
         this._noise(0.045, 0.11 + power * 0.06, 1700);

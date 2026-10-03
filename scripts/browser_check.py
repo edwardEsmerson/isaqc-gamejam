@@ -53,6 +53,8 @@ with sync_playwright() as p:
     assert charge, 'Holding G should charge the controlled ball carrier'
     page.keyboard.up('g')
     page.wait_for_function('window.__qubitFC.controller.match.stats[0].shots === 1')
+    page.evaluate('window.__qubitFC.controller.scene.event({type: "goal", team: 0, x: 1500, y: 530})')
+    page.wait_for_timeout(150)
 
     page.keyboard.press('Escape')
     page.wait_for_function('window.__qubitFC.controller.paused')
@@ -88,6 +90,7 @@ with sync_playwright() as p:
         page.wait_for_timeout(200)
         assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
         page.screenshot(path=str(artifacts / f'{name}.png'))
+    page.close()
     # Use browser gamepad events and menu actions through the same polling path as real pads.
     pads = browser.new_page(viewport={'width': 1440, 'height': 900})
     pads.on('pageerror', lambda error: errors.append(str(error)))
@@ -100,26 +103,29 @@ with sync_playwright() as p:
     ''')
     pads.goto(url, wait_until='networkidle')
     pads.wait_for_function('window.__qubitFC?.controller?.scene')
-    def press_a(index):
+    def press_a(index, expected):
         pads.evaluate('(i) => { checkPads[i].buttons[0] = {pressed: true, value: 1}; }', index)
-        pads.wait_for_timeout(120)
-        pads.evaluate('(i) => { checkPads[i].buttons[0] = {pressed: false, value: 0}; }', index)
-        pads.wait_for_timeout(120)
-    press_a(0)
+        pads.wait_for_function(expected)
+        pads.evaluate('''(i) => new Promise(resolve => {
+          checkPads[i].buttons[0] = {pressed: false, value: 0};
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        })''', index)
+    press_a(0, 'window.__qubitFC.controller.ui.screen === "join"')
     assert pads.evaluate('window.__qubitFC.controller.ui.screen') == 'join'
-    press_a(0)
-    press_a(1)
+    press_a(0, 'window.__qubitFC.input.assignedPads[0] === 0')
+    press_a(1, 'window.__qubitFC.input.assignedPads[1] === 1')
     assert pads.evaluate('window.__qubitFC.input.assignedPads') == [0, 1]
-    press_a(0)
+    press_a(0, 'window.__qubitFC.controller.ui.screen === "howto"')
     assert pads.evaluate('window.__qubitFC.controller.ui.screen') == 'howto'
-    press_a(0)
+    press_a(0, 'window.__qubitFC.controller.ui.screen === "match"')
     pads.wait_for_function('window.__qubitFC.controller.match.phase === "play"')
+    assert 'A' in pads.locator('#control-keys-0').inner_text()
     before_pad = pads.evaluate('window.__qubitFC.controller.match.getControlled(0).x')
     pads.evaluate('checkPads[0].axes[0] = 1')
-    pads.wait_for_timeout(300)
+    pads.wait_for_function('(x) => window.__qubitFC.controller.match.getControlled(0).x - x > 30', arg=before_pad)
     pads.evaluate('checkPads[0].axes[0] = 0')
     after_pad = pads.evaluate('window.__qubitFC.controller.match.getControlled(0).x')
-    assert after_pad - before_pad > 30
+    assert after_pad - before_pad > 30, (before_pad, after_pad)
     pads.close()
     assert not errors, errors
     print(json.dumps({'status': 'passed', 'page_errors': errors, 'artifacts': str(artifacts)}, indent=2))

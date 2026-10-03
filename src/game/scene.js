@@ -33,6 +33,8 @@ export class PitchScene extends Phaser.Scene {
     }
     this.dynamic = this.add.graphics().setDepth(4);
     this.trail = this.add.graphics().setDepth(3);
+    this.netGlow = this.add.graphics().setDepth(6);
+    this.netPulse = [0, 0];
     this.ballShadow = this.add.ellipse(0, 0, 25, 14, 0x031b1b, 0.5).setDepth(10);
     this.ballRing = this.add.graphics().setDepth(12);
     this.ballView = this.add.container(0, 0, [
@@ -251,7 +253,7 @@ export class PitchScene extends Phaser.Scene {
     const width = this.scale.width, height = this.scale.height;
     const viewWidth = this.controller.mode === 'match' && width >= 1150 ? width - 250 : width;
     camera.setViewport(0, 0, viewWidth, height);
-    const zoom = Math.min(viewWidth / 1660, height / 1110) * (width > 1000 ? 1.08 : 1.01);
+    const zoom = Math.min(viewWidth / (viewWidth < width ? 1720 : 1660), height / 1110) * (viewWidth === width && width > 1000 ? 1.08 : 1.01);
     camera.setZoom(zoom);
     const offset = this.controller.mode === 'menu' && width > 1000 ? -130 : 0;
     const targetX = PITCH.cx + (match.ball.x - PITCH.cx) * 0.17 + offset;
@@ -278,6 +280,7 @@ export class PitchScene extends Phaser.Scene {
       if (!reduced) this.cameras.main.shake(100, 0.0018);
     }
     if (event.type === 'goal') {
+      this.netPulse[event.x > PITCH.cx ? 1 : 0] = 1;
       this.burst(event.x, event.y, color, reduced ? 12 : 48, 240);
       if (!reduced) this.cameras.main.shake(350, 0.004);
     }
@@ -303,6 +306,29 @@ export class PitchScene extends Phaser.Scene {
   }
 
   renderFeedback(dt) {
+    this.netGlow.clear();
+    for (let side = 0; side < 2; side++) {
+      const pulse = this.netPulse[side];
+      if (pulse < 0.01) continue;
+      this.netPulse[side] *= Math.exp(-dt * 5);
+      const goalX = side ? PITCH.right : PITCH.left, sign = side ? 1 : -1;
+      const stretch = this.controller.reducedMotion ? 0 : pulse * 20;
+      this.netGlow.lineStyle(1.5, 0xf4f6ef, pulse * 0.7);
+      for (let row = 0; row <= 11; row++) {
+        const y = PITCH.cy - 110 + row * 20;
+        const back = goalX + sign * (43 + Math.sin(row / 11 * Math.PI) * stretch);
+        this.netGlow.lineBetween(goalX, y, back, y);
+      }
+      for (let col = 1; col <= 4; col++) {
+        this.netGlow.beginPath();
+        for (let row = 0; row <= 11; row++) {
+          const y = PITCH.cy - 110 + row * 20;
+          const x = goalX + sign * col / 4 * (43 + Math.sin(row / 11 * Math.PI) * stretch);
+          if (row === 0) this.netGlow.moveTo(x, y); else this.netGlow.lineTo(x, y);
+        }
+        this.netGlow.strokePath();
+      }
+    }
     for (let i = this.fx.length - 1; i >= 0; i--) {
       const fx = this.fx[i];
       fx.age += dt;
