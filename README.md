@@ -110,3 +110,5 @@ All primary gameplay code, pitch graphics, player/ball visuals, icons and synthe
 The playable game includes local multiplayer, solo practice, spectator mode, the HZH gate drill, six-player formations, pass previews, gate passes, pressure, randomly changing signed goal targets, goalkeeper readings, collapse/reset, physical saves, measurement shots and rebounds, split through-balls with controllable gate support, two halves, stats, tutorials, audio and accessibility settings. Split passes use a separate spatial path state coupled to the ball qubit; their interference is not represented by a single Bloch arrow.
 
 See [design notes](docs/DESIGN.md) for the model and visual direction, and [showcase guide](docs/SHOWCASE.md) for a short demonstration plan.
+
+For a detailed explanation, read the [implemented quantum mechanics](docs/game-logic.md), [quick demo pointers](docs/demo-script.md), and [original single-qubit principles](docs/quantum-football-principles.md).
