@@ -17,6 +17,11 @@ After cloning, run `sh scripts/setup-git.sh`. This sets fast-forward-only pulls,
 simple pushes, and pruning of stale remote branches for this checkout only.
 Set your own Git name and email if they are not already configured.
 
+Install Unity Editor `6000.3.25f1` with Unity Hub and open the `unity/` project.
+Let Unity resolve the package versions in `unity/Packages/manifest.json`. If you
+use PixelLab through Codex, run `sh scripts/setup-pixellab.sh` and provide the
+`PIXELLAB_API_KEY` environment variable to the Codex process.
+
 Start with a clean working tree; finish or save your existing changes first:
 
 ```bash
@@ -79,8 +84,10 @@ Use a merge commit to preserve the jam's incremental commit history. Delete the
 finished branch after merging. Coding agents should report validation and suggest
 a merge once review is complete; merging remains a team decision.
 
-There is no game implementation or game test suite yet. The current GitHub check
-detects whitespace errors only; it does not establish gameplay correctness.
+The Unity project is a scaffold; gameplay and automated tests are not present
+yet. The current GitHub check detects whitespace errors only; it does not
+establish gameplay correctness. Compile and play through the affected loop in
+Unity before submitting gameplay changes.
 
 ## GitHub settings
 
