@@ -171,6 +171,7 @@ export class MatchAudio {
         this._noise(0.045, 0.11 + power * 0.06, 1700);
         break;
       }
+      case 'laneGate':
       case 'gate': {
         if (now - this._lastGate < 0.07) return;
         this._lastGate = now;
@@ -180,6 +181,28 @@ export class MatchAudio {
         this._tone(notes[0] * 2, notes[0] * 2.03, 0.08, 0.025);
         break;
       }
+      case 'split':
+        this._noise(0.34, 0.065, 2000, 0, 'bandpass', 0.035);
+        this._tone(392, 783.99, 0.3, 0.046, 0, 'sine', 0.025);
+        this._tone(523.25, 261.63, 0.3, 0.046, 0.025, 'sine', 0.025);
+        break;
+      case 'recombine': {
+        const alternate = event.port === 1 || event.alternate === true;
+        const notes = alternate ? [440, 349.23, 523.25] : [523.25, 783.99, 1046.5];
+        notes.forEach((note, index) => this._tone(note, note, 0.28, 0.055, index * 0.035, 'triangle', 0.012));
+        this._noise(0.11, 0.042, 2700, 0, 'highpass', 0.012);
+        break;
+      }
+      case 'pathCollapse':
+        this._noise(0.065, 0.08, 2800, 0, 'highpass');
+        this._tone(660, 220, 0.17, 0.06, 0, 'triangle');
+        this._tone(110, 65, 0.095, 0.07, 0.04);
+        break;
+      case 'rebound':
+        this._tone(190, 65, 0.11, 0.15);
+        this._noise(0.055, 0.11, 1700);
+        this._tone(369.99, 246.94, 0.19, 0.035, 0.02, 'triangle');
+        break;
       case 'tackle':
         this._tone(95, 35, 0.16, 0.23);
         this._noise(0.13, 0.21, 850);

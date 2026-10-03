@@ -1,11 +1,11 @@
 const KEYBOARDS = [
-  { left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', pass: 'KeyF', shoot: 'KeyG', switch: 'KeyH', reading: 'KeyR', sprint: 'ShiftLeft' },
-  { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', pass: 'KeyK', shoot: 'KeyL', switch: 'KeyJ', reading: 'KeyU', sprint: 'ShiftRight' },
+  { left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', pass: 'KeyF', split: 'KeyQ', shoot: 'KeyG', switch: 'KeyH', reading: 'KeyR', sprint: 'ShiftLeft' },
+  { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', pass: 'KeyK', split: 'KeyO', shoot: 'KeyL', switch: 'KeyJ', reading: 'KeyU', sprint: 'ShiftRight' },
 ];
 
 const GAME_KEYS = new Set(KEYBOARDS.flatMap((mapping) => Object.values(mapping)).concat(['Escape', 'KeyP', 'Enter', 'Space']));
-const ACTION_KEYS = new Set(KEYBOARDS.flatMap((mapping) => [mapping.pass, mapping.shoot, mapping.switch, mapping.reading]).concat(['Escape', 'KeyP', 'Enter', 'Space']));
-const EMPTY_ACTIONS = () => ({ x: 0, y: 0, pass: false, shoot: false, shootReleased: false, switch: false, reading: false, sprint: false });
+const ACTION_KEYS = new Set(KEYBOARDS.flatMap((mapping) => [mapping.pass, mapping.split, mapping.shoot, mapping.switch, mapping.reading]).concat(['Escape', 'KeyP', 'Enter', 'Space']));
+const EMPTY_ACTIONS = () => ({ x: 0, y: 0, pass: false, split: false, shoot: false, shootReleased: false, switch: false, reading: false, sprint: false });
 
 function buttonDown(button) {
   return Boolean(button && (button.pressed || button.value > 0.5));
@@ -199,6 +199,7 @@ export class InputManager {
       const actions = {
         x, y,
         pass: pressed(mapping.pass) || padPressed(0),
+        split: pressed(mapping.split) || padPressed(4),
         shoot,
         shootReleased,
         switch: pressed(mapping.switch) || padPressed(2),
