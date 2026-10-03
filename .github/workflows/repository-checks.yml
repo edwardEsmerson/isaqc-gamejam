@@ -30,3 +30,15 @@ jobs:
             base=$(git hash-object -t tree /dev/null)
           fi
           git diff --check "$base" HEAD
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: prototype/package-lock.json
+      - name: Install game dependencies
+        working-directory: prototype
+        run: npm ci
+      - name: Check TypeScript and build game
+        working-directory: prototype
+        run: npm run build

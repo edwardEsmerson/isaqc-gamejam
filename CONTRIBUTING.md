@@ -79,8 +79,10 @@ Use a merge commit to preserve the jam's incremental commit history. Delete the
 finished branch after merging. Coding agents should report validation and suggest
 a merge once review is complete; merging remains a team decision.
 
-There is no game implementation or game test suite yet. The current GitHub check
-detects whitespace errors only; it does not establish gameplay correctness.
+The initial Phaser setup lives in `prototype/`. Run `npm ci` and `npm run build`
+there, then check the setup screen in a browser. GitHub checks whitespace and
+the production build. There is no game test suite yet; these checks do not
+establish gameplay or quantum correctness.
 
 ## GitHub settings
 
