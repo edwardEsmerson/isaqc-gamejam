@@ -1,0 +1,26 @@
+name: Build Qubit FC
+
+on:
+  push:
+    branches: [main, feat/qubit-fc]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  game:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qubit-fc-web-build
+          path: dist/

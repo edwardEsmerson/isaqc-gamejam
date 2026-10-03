@@ -23,10 +23,14 @@ test('phase has no direct Z odds but H converts it into observable odds', () => 
   near(probability(applyGate(minus, 'H')), 0);
 });
 
-test('a real T phase circuit produces the 85% keeper-reading hedge', () => {
+test('T-based circuits distinguish a Z-only advantage from a genuine X/Z hedge', () => {
   const tuned = circuit(freshState(), ['H', 'T', 'H']);
   near(probability(tuned), (1 + Math.SQRT1_2) / 2);
-  const hedge = { x: Math.SQRT1_2, y: 0, z: Math.SQRT1_2 };
+  near(probability(tuned, 'X'), 0.5);
+  const hedge = circuit(freshState(), ['H', 'T', 'H', 'T', 'Z', 'T', 'Z']);
+  near(hedge.x, Math.SQRT1_2);
+  near(hedge.y, 0);
+  near(hedge.z, Math.SQRT1_2);
   near(probability(hedge, 'Z'), 0.8535533905932737);
   near(probability(hedge, 'X'), 0.8535533905932737);
   near(probability(freshState(), 'X'), 0.5);

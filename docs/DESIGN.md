@@ -1,6 +1,6 @@
 # Qubit FC
 
-Fast local five-a-side football, where completed passes are quantum gates and shots are measurements. The four outfield roles carry Z (defender), H and T (midfielders), and X (striker). A keeper reception resets the state to north. Four outfield players means four gates per roster; S is supported by the math but the standard roster uses T so the H–T–H hedge is possible.
+Fast local five-a-side football, where completed passes are quantum gates and shots are measurements. The four outfield roles carry X (defender), H and Z (midfielders), and T (striker). A keeper reception resets the state to north. Four outfield players means four gates per roster; S is supported by the math but the standard roster uses T so smaller phase rotations are possible.
 
 ## Visual direction
 
@@ -10,7 +10,7 @@ Indoor broadcast football: navy stadium `#0b1724`, deep green turf `#205a46`, al
 
 The qubit is a Bloch vector r. Gates rotate r without increasing its length. Pressure applies a depolarizing channel and shortens it. For a goal target n, scoring probability is `(1 + r · n) / 2`; pure states give `cos²(theta/2)`. A tackle/interception measures in Z and produces a fresh north or south state. Keepers reset to north. The defending keeper can rotate the goal's measurement axis from Z to X over two seconds; rotation freezes when the ball enters that penalty box.
 
-The flip identity is H–Z–H = X. Starting from north, H–T–H gives a hedge with x = z = 1/√2, scoring roughly 85.4% against either X or Z. The ball cannot be perfect for both axes. Phase is visible in standard mode; expert mode hides the transverse components in the HUD, making the passing history matter.
+The flip identity is H–Z–H = X. Starting from north, H–T–H–T–Z–T–Z gives a hedge with x = z = 1/√2, scoring roughly 85.4% against either X or Z. H–T–H alone does not hedge these axes: its x is zero and its phase lies along y. With Bloch vector length L, the true hedge scores with probability `0.5 + L/(2√2)` against either fixed lock. The ball cannot be perfect for both axes. Phase is visible in standard mode; expert mode hides the transverse components in the HUD, making the passing history matter.
 
 ## Implementation
 
