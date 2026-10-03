@@ -1,11 +1,10 @@
-# Contributing as a team
+# Contributing during the jam
 
 ## Pick a task
 
-Use a GitHub issue for each feature or bug. Describe the expected result and how
-to verify it, assign one owner, and link the pull request. Coordinate before
-editing files another teammate is actively changing. Keep each task small enough
-to finish and review during the jam.
+Pick a small feature or bug and agree who owns it. GitHub issues are optional.
+Coordinate before editing files another teammate is actively changing. Keep
+tasks small enough to finish and verify during the jam.
 
 The event rules in [about.md](about.md) govern the work. Quantum mechanics must
 drive gameplay, and primary gameplay code must be written during the event
@@ -30,12 +29,13 @@ git pull --ff-only origin main
 git switch -c feat/measurement-feedback
 ```
 
-Use `feat/`, `fix/`, `docs/`, or `chore/` followed by a short task name. Share work
-through branches and pull requests. Keep `main` ready for a demo.
+Use `feat/`, `fix/`, `docs/`, or `chore/` followed by a short task name. Push
+branches so teammates can see progress. Keep `main` ready for a demo; use direct
+branch merges instead of pull requests during the jam.
 
 ## Commit and share progress
 
-Commit after a coherent, validated milestone, and push before a break or handoff.
+Commit after a coherent milestone, and push before a break or handoff.
 Use short imperative subjects such as `Add measurement feedback`. Stage explicit
 files or selected hunks and inspect the staged diff before committing:
 
@@ -65,34 +65,32 @@ Resolve conflicts with the affected teammate and repeat validation. Do not
 force-push or rewrite published history. Do not reset or clean away another
 person's work.
 
-## Review and merge
+## Test and merge
 
-Open a pull request into `main` early; use a draft while work is incomplete.
-Describe the resulting behavior, link the issue, and record checks actually run.
-Include screenshots or a short recording for visual changes. Mention unfinished
-work and known limitations explicitly.
+Before merging, compile and play through the changed loop in Unity. For quantum
+calculations, use repeatable checks. Coordinate with the team and use a merge
+commit to preserve incremental history:
 
-Before merging:
+```bash
+git fetch origin
+git switch main
+git pull --ff-only origin main
+git merge --no-ff feat/measurement-feedback
+git push origin main
+git branch -d feat/measurement-feedback
+git push origin --delete feat/measurement-feedback
+```
 
-- Get approval from at least one teammate other than the author.
-- Pass the `Repository checks` GitHub check and resolve review conversations.
-- Run available game checks. For gameplay changes, play through the core loop;
-  for quantum calculations, add deterministic tests and check the behavior.
-- Update setup instructions and third-party declarations when needed.
-
-Use a merge commit to preserve the jam's incremental commit history. Delete the
-finished branch after merging. Coding agents should report validation and suggest
-a merge once review is complete; merging remains a team decision.
+Substitute the name of your task branch. Do not merge unfinished or untested
+work. Record third-party libraries and assets in `THIRD_PARTY.md`.
 
 The Unity project is a scaffold; gameplay and automated tests are not present
-yet. The current GitHub check detects whitespace errors only; it does not
-establish gameplay correctness. Compile and play through the affected loop in
-Unity before submitting gameplay changes.
+yet. The GitHub check detects whitespace errors only; it does not establish
+gameplay correctness.
 
 ## GitHub settings
 
-Protect `main` with a pull request requirement, one approving review, dismissal
-of stale approvals, resolved review conversations, and the required `Repository
-checks` status. Block force pushes and branch deletion. Keep merge commits
-enabled and disable squash/rebase merging to preserve incremental history.
-These are repository settings; cloning files alone does not activate protection.
+For direct branch merging, `main` must allow pushes without a pull request or
+review approval. Keep merge commits enabled and block force pushes. Retain the
+`Repository checks` status if it works with the team's direct-push workflow.
+These are GitHub settings; changing this file alone does not update them.

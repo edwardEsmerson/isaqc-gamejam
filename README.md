@@ -22,7 +22,7 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md), then configure Git for this checkout 
 sh scripts/setup-git.sh
 ```
 
-Use a task branch, commit small milestones, and open a pull request into `main` for teammate review. GitHub checks whitespace on changed files.
+Use a task branch, commit small milestones, and merge directly into `main` after checking the change. Pull requests are not part of the hackathon workflow. GitHub checks whitespace on pushes.
 
 Before committing, run:
 
